@@ -1,0 +1,183 @@
+---
+title: "STA261 Summer 2018 Lecture 1:" 
+subtitle: "Simulation Supplement to Normal Approximation to the Binomial Example"
+author: "Alex Stringer"
+date: '`r Sys.Date()`'
+output: 
+  html_document:
+    toc: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup-noshow, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r setup-show,include=TRUE}
+# Load the tidyverse packages
+suppressMessages({
+  suppressWarnings({
+    library(tidyverse)
+  })
+})
+```
+
+In class, we discussed the *Bernoulli* distribution, the probability distribution of a single binary random variable which takes values $X = 1$ with probability $p$ and $0$ with probability $1-p$:
+$$
+X \sim Bern(p) \implies P(X = k) = \begin{cases} p \,\,\,\,\,\,\,\,\,\, \mbox{ if } k = 1 \\ 1 - p \mbox{ if } k = 0 \end{cases}
+$$
+This is analagous to a coin flip: denoting heads as $1$ and tails as $0$, we know intuitively that if we flip a fair coin once, the probability of heads is $1/2$ and of tails is $1/2$; if $X$ is the random variable representing this experiment, we write $X \sim Bern(1/2)$.
+
+We can simluate the flipping of a coin in `R` as follows:
+```{r flip-1}
+# Flip a coin once
+sample(c(0,1),1)
+```
+That's not altogether that interesting. A natural question is to ask about the relative frequency with which $1$ and $0$ appear in a sequence of many independent flips. We know from our discussion about the Law of Large numbers that if we flip the coin enough times, we can get this relative frequency as close to $1/2$ as we want with as high a probability as we want. Practically, this means that if we flipped the coin a bunch of times, we would think it was pretty weird to see a relative frequency of heads that was pretty different than $1/2$.
+
+Let's try it:
+```{r flip-2}
+set.seed(23893478)
+# Sample (wuth replacement) from {0,1} 100 times:
+sample(c(0,1),100,replace=TRUE)
+
+# ...that's not quite qhat we want, we actually just want to see the relative frequency with which 1 appears:
+mean(sample(c(0,1),100,replace=TRUE))
+```
+Is $61$ heads out of $100$ flips weird? If $p = 1/2$ (if the coin is fair) then what is the probability of observing the result we just observed?
+
+The probability of observing *any particular* sequence of $100$ coin flips with $61$ heads is
+$$
+\begin{aligned}
+&(1/2) \times (1/2) \times\ldots\times (1 - 1/2) \times (1 - 1/2) \\
+=& (1/2)^{61} \times (1 - 1/2)^{100 - 61} = (1/2)^{100} 
+\end{aligned}
+$$
+That's a very small number, but there are also a lot of binary sequences of length $100$ with $61$ heads,
+$$
+{100 \choose 61} = \frac{100!}{61!(100 - 61)!}
+$$
+We can then compute the probability that we observe $61$ heads in $100$ independent tosses of a fair coin as
+$$
+P\left( \sum_{i=1}^{100}X_{i} = 61\right) = {100 \choose 61}(1/2)^{100} \approx 0.7\%
+$$
+So as we thought, this result is pretty unlikely.
+
+What values *are* likely? Because the result of each flip is a random variable, so is the value of the sum of $100$ independent flips. If we flipped the coin $100$ times, we could expect to see a range of values of the number of heads observerd. What kind of values? Certainly $50$ heads would be the least surprising, and we saw $61$ was quite surprising. What about $55$? $45$? Let's find out:
+
+```{r flip-3}
+# Simulate the flipping of 100 coins. Do it many times and record the observed number of heads each time.
+B <- 1000 # Number of simulations to do
+numheads <- numeric(B)
+for (b in 1:B) {
+  # Flip the coin 100 times, and store the number of heads
+  numheads[b] <- sum(sample(c(0,1),100,replace=TRUE))
+}
+
+# Graph the results
+plt1 <- data_frame(x = numheads) %>%
+  ggplot(aes(x = x)) +
+  theme_classic() +
+  geom_bar(aes(y = ..count.. / (sum(..count..))),colour = "black",fill = "#ff9966") +
+  labs(title = "Observed Number of Heads in 100 Flips of a Fair Coin",
+       subtitle = "Based on 1000 simulations",
+       x = "Number of Observed Heads",
+       y = "% of Experiments") +
+  scale_x_continuous(breaks = seq(0,100,5)) +
+  scale_y_continuous(breaks = seq(0.01,0.1,by=0.01),labels = scales::percent_format())
+
+plt1
+```
+Adding up the heights of the bars gives us an idea of the relative frequencies with which each number of heads would occur. We see the value for $61$ is just under $1\%$, which is what we saw in our previous single trial.
+
+We just derived a special case of the *Binomial* distribution, the distribution of the number of $1$'s in $n$ independent Bernoulli trials:
+$$
+\begin{aligned}
+&X_{i} \overset{IID}{\sim} Bern(p) \\
+\implies& \sum_{i=1}^{n}X_{i} \sim Binom(n,p) \\
+\implies& P\left( \sum_{i=1}^{n}X_{i} = k\right) = {n \choose k}p^{k}(1-p)^{n-k}
+
+\end{aligned}
+$$
+You may have seen this in your previous probability courses.
+
+The introduction of the Binomial distribution around the $17^{th}$ century was certainly an interesting advancement, but it posed technical challenges. Consider our case when $n = 100$ and $k = 61$. We had
+$$
+P\left( \sum_{i=1}^{100}X_{i} = 61\right) = {100 \choose 61}(1/2)^{100} \approx 0.7\%
+$$
+This involves numbers like $(1/2)^{100}$ and $\frac{100!}{61!(100-61)!}$, which present serious computational challenges to do by hand. Even on modern computers, if $n$ gets much larger than this, these expressions are not tractable.
+
+What about the distribution function,
+$$
+F(k) = P\left( \sum_{i=1}^{n}X_{i} \leq k\right) = \sum_{i=0}^{k}{n \choose k}p^{k}(1-p)^{n-k}
+$$
+Even if one went through the painstaking calcualtions required to get the result we got above, that's only one of $k$ terms in the sum required to calculate $F(k)$! So answering questions like "what is the probability that I'll get less than $40$ or more than $60$" becomes computationally challenging.
+
+Let's take a closer look at that bar chart. The shape kind of looks familiar...
+```{r flip-4}
+plt1
+```
+In fact,
+```{r flip-5}
+plt1 + geom_line(data = data_frame(x = seq(30,70,by=0.01),
+                                   y = dnorm(x,50,5)),
+                 mapping = aes(x = x,y = y,group = 1),
+                 colour = "blue")
+
+```
+
+The observed relative frequencies of numbers of heads in $100$ flips seem to correspond to those relative frequencies implied by a normal distribution with mean $\mu = np = 50$ and variance $\sigma^{2} = np(1-p) = 25$.
+
+We can use this to approximate probabilities as follows:
+```{r flip-6}
+# Exact probability sum(X) = 50
+dbinom(50,100,.5)
+# Expirical probability from simulation- just the relative frequency with which sum(X) actually was equal to 50
+mean(numheads == 50)
+# Probability based on normal distribution- roughly, it's the probablity X is between 49.5 and 50.4:
+pnorm(50.4,50,5) - pnorm(49.5,50,5)
+
+# Exact probability sum(X) <= 50
+sum(dbinom(0:50,100,.5))
+# Empirical
+mean(numheads <= 50)
+# Normal Approximation- why do we do 50.4 instead of 50?
+pnorm(50.4,50,5)
+```
+This is a special case of the *Central Limit Theorem*, which we are about to state and prove.
+
+The convergence in distribution (theoretical result) implies a finite-sample approximation that we would expect to get uniformly more accurate as $n$ gets larger (practical result). We can check this using more simulations:
+```{r sim-1}
+simulate_coin_tosses <- function(n) {
+  B <- 1000 # Number of simulations to do
+  numheads <- numeric(B)
+  for (b in 1:B) {
+    # Flip the coin n times, and store the number of heads
+    numheads[b] <- sum(sample(c(0,1),n,replace=TRUE))
+  }
+  
+  # Graph the results
+  plt <- data_frame(x = numheads) %>%
+    ggplot(aes(x = x)) +
+    theme_classic() +
+    geom_bar(aes(y = ..count.. / (sum(..count..))),colour = "black",fill = "#ff9966") +
+    geom_line(data = data_frame(x = seq(n*.5 - 4*sqrt(n*.25),n*.5 + 4*sqrt(n*.25),by=0.01),
+                                   y = dnorm(x,n*.5,sqrt(n*.25))),
+                 mapping = aes(x = x,y = y,group = 1),
+                 colour = "blue") +
+    labs(title = stringr::str_c(n," Flips"),
+         subtitle = "Based on 1000 simulations",
+         x = "Number of Observed Heads",
+         y = "% of Experiments") +
+    scale_y_continuous(labels = scales::percent_format())
+  
+  plt
+}
+
+cowplot::plot_grid(
+  simulate_coin_tosses(5),
+  simulate_coin_tosses(10),
+  simulate_coin_tosses(50),
+  simulate_coin_tosses(100)
+)
+```

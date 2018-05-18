@@ -1,0 +1,446 @@
+---
+title: "Solving A Probability Question Empirically and Analytically: A Resource for Instructors to Integrate Computation Into Statistics Courses"
+author: "Alex Stringer"
+date: '`r Sys.Date()`'
+output: 
+  html_document:
+    toc: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup-noshow, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r setup-show,include=TRUE}
+# Load the tidyverse packages
+suppressMessages({
+  suppressWarnings({
+    library(tidyverse)
+  })
+})
+```
+
+# Introduction
+
+## Description of Document
+
+This document is meant to offer guidance to instructors wishing to augment their statistics courses with computational elements, by way of an extended example due to Horton (2013): I Hear, I Forget. I Do, I Understand: A Modified Moor-Method Mathematical Statistics Course. *The American Statistician* 67:4 219-228. This document describes in detail the challenges students may face when implementing a basic simulation of a non-trivial experiment, and the potential benefits in understanding that accompany working through these challenges. Also described is the analytical solution to the same problem, and how computation can be used by students to check their work and develop confidence in their solutions. 
+
+The example here is presented in two parts. A "basic" part uses mostly base `R` functionality, and is suitable for instructors who want to use computation alongside analytical problem solving in their course. This may be most useful for introductory courses like STA220/221/257/261, and for upper-year theory-based courses, where computation can be used to aid student understanding and engagement, but isn't part of the main learning objectives. The basic simulation code is extended throughout with an "advanced" part, which improves the base `R` code using modern packages and techniques. This may be more suitable for more applied courses such as STA302/303/314/414, where part of the learning objectives of the course are to have students learn to compute with data.
+
+## Learning Objectives
+
+# The Example
+
+The example is Example 3.1 from page 4 (222) of the above referenced paper. Suppose a disease is present in any randomly selected member of a population with probability $P(\mbox{disease}) = p$, and that this can be discovered by a blood test with perfect accuracy, $P(\mbox{disease } | \mbox{ test is positive}) = 1$, $P(\mbox{disease } | \mbox{ test is negative}) = 0$. $N$ people are to be tested, however the test is expensive, so we wish to reduce the number of tests performed from the $N$ tests that would be required to test everybody.
+
+To this end, these $N$ individuals are to be split into $n$ groups of size $k$ people each, $N = nk$ with $N, n, k \in \mathbb{N}$. Each pool is then tested. If the test is negative, then all the $k$ people in that group are healthy. If the test is positive, then the $k$ people must be tested individually (assuming all tests are done simulataneously), for a total of $k+1$ tests.
+
+The question is then:
+
+- For fixed $N$, what is the expected number of tests that will be performed, as a function of $k$?
+- Find the value of $k$ to minimize the expected number of tests performed
+
+While this question can be solved analytically with introductory probability at the level of STA257, first evaluating this experiment empirically will enhance students' understanding of the question while teaching them valuable programming and problem-solving skills.
+
+## Empirical Solution
+
+### Simulate One Experiment (Basic)
+
+Using mostly bae `R`, students may be guided to produce the following result:
+
+```{r simulation-basic-1}
+
+# Function to perform one experiment
+perform_one_experiment_basic <- function(k,N=5000,p=0.05) {
+  n <- N / k
+  
+  # Simulate the population
+  popsim <- numeric(N)
+  for (i in 1:N) {
+    popsim[i] <- rbinom(n = 1,size = 1,prob = p)
+  }
+  
+  # Group them
+  groups <- rep(1:n,k)
+  
+  # Check the disease status of each group
+  any_diseased <- numeric(n)
+  for (i in 1:N) {
+    if (popsim[i] == 1) {
+      any_diseased[groups[i]] <- 1
+    }
+  }
+  
+  # Count the number of tests performed
+  numtests <- 0
+  for (i in 1:n) {
+    if (any_diseased[i] == 1) {
+      numtests <- numtests + (k + 1)
+    }
+    else {
+      numtests <- numtests + 1
+    }
+  }
+  numtests
+}
+
+perform_one_experiment_basic(5)
+
+
+
+```
+
+### Simulate One Experiment (Advanced)
+
+If the instructor wishes to introduce or otherwise make use of more advanced programming constructs in `R`, this example can be used for this purpose by extending the above "basic" simulation to include the use of more advanced data structures and some light functional programming:
+
+```{r simulation-advanced-1}
+# Function to check inputs: same as above
+# Function to perform one experiment
+perform_one_experiment_advanced <- function(k,N=5000,p=0.05) {
+  n <- N / k
+  data_frame(disease = rbinom(N,1,p),
+             group = rep(1:n,k)) %>%
+    group_by(group) %>%
+    summarize(disease = max(disease)) %>%
+    mutate(numtests = k*disease + 1) %>%
+    summarize(numtests = sum(numtests)) %>%
+    pull(numtests)
+}
+
+perform_one_experiment_advanced(5)
+
+```
+
+### Simulate Many Experiments
+
+Analogous to the manner in which the single-experiment simulation is coded, there are two immediate ways to perform the multiple simulations desired:
+
+```{r multiple-simulation-1}
+# Two functions to perform B experiments for fixed k and average the result
+# 
+# Basic
+perform_B_experiments_basic <- function(B,k,N=5000,p=0.05) {
+  results <- numeric(B)
+  for (i in 1:B) {
+    results[i] <- perform_one_experiment_basic(k,N,p)
+  }
+  mean(results)
+}
+
+perform_B_experiments_basic(25,5)
+
+# Advanced
+perform_B_experiments_advanced <- function(B,k,N=5000,p=0.05) {
+  map(1:B,~perform_one_experiment_advanced(k,N,p)) %>%
+    reduce(c) %>%
+    mean()
+}
+
+perform_B_experiments_advanced(25,5)
+
+```
+
+We can then make a `ggplot` plot of the empirically-estimated number of experiements required for each value of k as follows. `ggplot` is worth introducing to students at any level as it allows them to create publication-quality plots:
+```{r plot-results}
+# Simulate for valid values of k from 1 to 10:
+sim_results <- numeric(5)
+k_to_do <- c(1,2,5,8,10)
+for (i in 1:length(k_to_do)) {
+  sim_results[i] <- perform_B_experiments_basic(25,k_to_do[i])
+}
+# ggplot needs its input to be a data_frame
+sim_results <- data_frame(k = k_to_do,numtests_sim = sim_results)
+
+
+# Or...
+sim_results <- c(1,2,5,8,10) %>%
+  map(~data_frame(k = .x,numtests_sim = perform_B_experiments_advanced(25,.x))) %>%
+  reduce(bind_rows)
+
+sim_results %>%
+  ggplot(aes(x = k,y = numtests_sim,group = 1)) +
+  theme_classic() +
+  geom_point() + 
+  geom_line() +
+  labs(title = "Simulated Average Number of Tests Performed",
+       subtitle = "Blood Pooling Example",
+       x = "Group Size (k)",
+       y = "Average Number of Tests Performed (25 simulations)") +
+  scale_x_continuous(breaks = 1:10) +
+  scale_y_continuous(labels = scales::comma_format())
+
+```
+
+This give students a feel for the problem that will help to guide our analytical solution: the number of tests starts high with low $k$ (pooling doesn't reduce the number of tests that much when the groups only have a couple people in them), then decreases as $k$ increases, but then starts increasing again, as the groups become large enough that most of them end up having a diseased individual, and therefore do not produce a reduction in the number of tests performed. From the simulations, we see that $k = 5$ is a likely candidate for the group size that minimizes the expected number of tests.
+
+### Challenges and Explanations
+
+Let us look at the details of simulating this experiment. The goal is to write a function `simulate_one_experiment(k,N,p)` that will take a value of $k$ (again, for fixed $N$ and $p$), peform the above experiment, and return the number of tests performed.
+
+To do this requires the problem to be broken down into an algorithm, that is, a clear set of sequential instructions. "Clear" here means "executable by a computer". Even if not actually coding up the result, this is a valuable step in solving any problem, one that students will benefit from doing. Students can be asked to produce something like the following as a first exercise:
+
+**Algorithm: Perform One Experiment**
+
+1. Fix $N \in \mathbb{N}$, $0 < p < 1$
+1. Input $k \in \mathbb{N}$ such that $n = N / k \in \mathbb{N}$
+1. Generate a population of simulated disease states: a vector of $N$ independent Bernoulli($p$) draws
+1. Divide these into $n$ groups of size $k$
+1. For each group, assign an indicator variable taking value $0$ if none of the $k$ Bernoulli draws in the group equal $1$, and $1$ if any of the draws equal $1$
+1. Sum up the number of tests performed across groups- $1$ test if the above indicator is zero, and $k+1$ tests if it equals 1
+1. Return the number of tests performed
+
+Though the statement of the problem is understandable to the general public and the probability calculations required are at the level of a student in a second-year introductory probability course, it is expected that most students would have trouble coming up with the above list of steps, as it requires thinking in a level of detail that is not always emphasized in problems like these. Let's look at each part of the above algorithm in more detail:
+
+1. *Fix $N \in \mathbb{N}$, $0 < p < 1$*
+1. Input $k \in \mathbb{N}$ such that $n = N / k \in \mathbb{N}$
+1. *Generate a population: a vector of $N$ independent Bernoulli($p$) draws*
+
+This is an opportunity to introduce students to the simulation API in `R`: the `rdist` functions like
+`rbinom`, `rnorm`, etc. There isn't much to say about these functions themselves, but for introductory `R` programmers, they are useful to introduce basic data structures and control flow. Students can first do the simulation the "low-level" way, by setting an empty vector of the desired length and writing a simple loop:
+```{r sim-1,echo=TRUE,eval=FALSE}
+N <- 10
+p <- 0.05
+popsim <- numeric(N)
+for (i in 1:N) {
+  popsim[i] <- rbinom(n = 1,size = 1,prob = p)
+}
+popsim
+```
+which in 6 lines of code gives a basic introduction to data structures, variables, `R`'s loop syntax, printing data, and of course the `rbinom` function. 
+
+They can then learn about *vectorized* functions, replacing the whole above procedure with
+```{r sim-2,echo=TRUE,eval=FALSE}
+popsim <- rbinom(n = N,size = 1,prob = p)
+```
+Regardless of how it is obtained, now the students have a vector of $0$'s and $1$s represented simulated disease states from our population of interest. Instructors interested in the "basic" simulation may now move to the next step.
+
+Instructors interested in the "advanced" simulation can now ask students: is this the best way to store these data? Thinking ahead, the next step in our algorithm is going to be to somehow group these simulated datapoints together. How would we do that given the current way these data are stored?
+
+The key concept to introduce to students here is that the manner in which the data is structured affects the scope of the analysis. In a standalone vector, we can't easily add a new piece of information (the group number) to each datapoint. We need to extend the *dimension* of each datapoint to include this new piece of information. 
+We can do this by storing the data in a *data frame*. This concept can be introduced to the students, and then the construction can be shown:
+```{r dataframe-1,echo = TRUE,eval=FALSE}
+popdataframe <- data_frame(disease = popsim)
+```
+That one line of code contains several elements that can be unpacked and discussed with students:
+
+- The `data_frame` command from the `dplyr` package is used to create a data frame, a structure that holds one or more *columns* of data of various types (numeric, categorical, date, etc). Values in the same *row* are typically referred to as *data points* and are understood to be related to each other (this will be clear at the next step)
+- The syntax for creating a `data_frame` is `data_frame(column1 = values1, column2 = values2, ...)`, where `column1` is the name of a column and `values1` is a vector of values to put in that column
+
+The result of the above command can be printed and viewed by the students:
+```{r dataframe-2,eval=FALSE}
+popdataframe
+```
+4. *Divide these into $n$ groups of size $k$*
+
+Because the data were generated randomly, the grouping can be deterministic. Students can create another vector, with each element representing the group membership of the corresponding observation in `popsim`:
+
+```{r group-1,eval=FALSE}
+groups <- rep(1:n,k)
+```
+Again, one line of code, but its construction requires students to understand what they are doing: there are $n = N / k$ groups, each with $k$ members, so we create a vector containing the numbers from $1$ to $n$, $k$ times each.
+
+Instructors following the discussion of the "advanced" simulation can put to students the question of how to add a column to the dataframe that gives the group index of each individual:
+```{r dataframe-3,eval=FALSE}
+popdataframe <- popdataframe %>%
+  mutate(group = rep(1:n,k))
+```
+
+This step introduces three new operations:
+
+- The `%>%` operator takes whatever is on the left of it and "pipes" it into whatever is on the right. It has been my experience that if too big a deal is made out of this, students get hung up on it: it's really not that complicated, and if you just start using it with minimal explanation, the resulting code is simple enough to follow (in fact, readability is the main argument for using `%>%` in the first place)
+- the `mutate` function takes a dataframe and adds new columns, which can be (but don't have to be) functions of existing columns. The syntax is the same as the `data_frame` creation function
+- the `rep` command repeats its first argument the number of times indicated by its second argument. The `1:k` syntax is short for `seq(1,k,1)`, and creates a sequence of integers from `1` to `k`
+
+Now we have a dataframe containing the `N` members of the population and their group memberships. Students can also be asked to modify this step so that it happens at the same time as the previous step (this is what is shown in the final simulation function in the previous section):
+```{r dataframe-4,eval=FALSE}
+popdataframe <- data_frame(disease = popsim,group = rep(1:n,k))
+popdataframe
+```
+5. *For each group, assign an indicator variable taking value $0$ if none of the $k$ Bernoulli draws in the group equal $1$, and $1$ if any of the draws equal $1$*
+
+We wish to check, for each group, whether there are any `disease == 1` observations. This can be accomplished using a loop:
+```{r summarize-1,eval=FALSE}
+  any_diseased <- numeric(n)
+  for (i in 1:N) {
+    if (popsim[i] == 1) {
+      any_diseased[groups[i]] <- 1
+    }
+  }
+```
+Students can be guided to come up with something like the above. This has the advantage of being prescriptive; essentially they
+
+- Create an external (to the dataframe) numeric vector of length equal to the number of groups, containing all zeroes to begin with
+- Loop over the rows of the dataframe containing the disease states and groups, checking if each observation has a disease state equalling `1`
+- If it does, the group to which it belongs is set to `1` in the group disease indicator vector
+
+This is another example where being forced to implement a simulation in turn forces students to understand what they are doing. Instructors following the "basic" simulation may move to the next step.
+
+This approach has several areas for improvement:
+
+- Now that the data is collected in a dataframe, the cleanest form of analysis keeps all quantities calculated from these data in the same dataframe; nothing is done *externally* to the dataframe. This is a key concept in tidy data analysis
+- The result is not properly structured: a numeric vector of zeroes and ones, where the *position* of a `1` indicates which group has a diseased observation. Keeping *data* in the *metadata* of a data structure is confusing and can lead to errors.
+
+This computation is an example of a very common computation in data anlaysis, the *group by/summarize* or *split/apply/combine* pipeline. We want to `group` the dataframe by one variable present in it (in this case, that variable is named `group`), and then apply a `summary` operation separately to each group. Specifically, we want to take the `max(disease)` for each group, and have the result be a new dataframe with one column representing the group and another column representing a binary indicator of whether the group has any dieased observations or not. We can use a proper groupby/summarize workflow using functions from the `dplyr` package in order to do these computations without leaving the dataframe:
+```{r summarize-2,eval=FALSE}
+any_diseased <- popdataframe %>%
+  group_by(group) %>%
+  summarize(disease = max(disease))
+any_diseased
+```
+6. *Sum up the number of tests performed across groups- $1$ test if the above indicator is zero, and $k+1$ tests if it equals 1*
+
+Students can now use another loop over the `any_diseased` indicators to count the number of tests performed, according to the description of the problem:
+```{r count-1,eval=FALSE}
+# Count the number of tests performed
+numtests <- 0
+for (i in 1:n) {
+  if (any_diseased[i] == 1) {
+    numtests <- numtests + (k + 1)
+  }
+  else {
+    numtests <- numtests + 1
+  }
+}
+numtests
+```
+This again has the advantage of being prescriptive, in the sense that students are taking their psuedocode from the beginning and translating it directly into compute code, reinforcing their depth of understanding of the procedure they are trying to implement.
+
+We can modify this for the "advanced" approach by working inside the properly structured dataframe students have created. Having the group and the diseased state next to each other now allows us to again remain inside the dataframe when we do the next step: adding up the number of tests performed.
+```{r summarize-3,eval=FALSE}
+any_diseased %>%
+  mutate(numtests = disease * k + 1) %>%
+  summarize(numtests = sum(numtests)) %>%
+  pull(numtests)
+```
+
+The result of the first three lines is a one-element (one row, one column) dataframe containing the number of tests performed. The final `pull` command extracts this value and returns it as a scalar, which is the desired output of one run of our function.
+
+7. *Return the number of tests performed*
+
+At this point, students have translated their algorithmic description of the exercise into computer code. The last step is to put the result into a function that can be called repeatedly, as shown in the previous sections. Instructors should decide how much detail to go in to; students can achieve this having only learned the basic syntax for function creation.
+
+## Analytical Solution
+
+With their empirical simulation in hand, the students can turn to solving the problem analytically, which might be more familiar territory for them.
+
+Let $Y_{i}$ be the binary indicator of whether *any* of the $k$ members of group $i$ have the disease, $i = 1 \ldots n$. Then each $Y_{i}$ is $Bernoulli(\theta)$, with
+$$
+\theta = P(Y_{i} = 1) = 1 - (1-p)^{k}
+$$
+This is obtained by noting that the probability that each individual has the disease is $p$, so the probability they don't have it is $(1-p)$. There are $k$ statistically independent people in each group, and the event $Y_{i} = 0$ is equivalent to none of these $k$ individuals having the disease. Hence
+$$
+P(Y_{i} = 0) = (1-p)^{k} \equiv 1 - \theta
+$$
+
+Students who have taken (or are taking) an introductory course in probability should have the background necessary to approach this question.
+
+Now the expected value of $Y_{i}$ is $E(Y_{i}) = \theta$. Let $T_{i}$ be the number of tests performed on group $i$. Since $T_{i} = 1$ if $Y_{i} = 0$ and $T_{i} = k+1$ if $Y_{i} = 1$,
+$$
+T_{i} = 1 + kY_{i}
+$$
+Which gives
+$$
+E(T_{i}) = 1 + k\theta
+$$
+The expected number of tests overall is therefore
+$$
+E\left( \sum_{i=1}^{n} T_{i} \right) = n + nk(1 - (1-p)^{k})
+$$
+recalling that $\theta = 1 - (1-p)^{k}$
+
+This is not the most complicated probability question ever asked, but it is not trivial, and a good proportion of the class may struggle to get the answer. One major benefit of having coded up the empirical solution first is the added understanding and clarity about the problem that the students get from doing this. Another advantage is that now we have a way to check whether our analytical answer is reasonable:
+
+```{r analytical-1}
+expected_tests <- function(k,N=5000,p=0.05) {
+  n <- N / k
+  n + n*k*(1 - (1-p)^k)
+}
+
+expected_tests(5)
+perform_B_experiments_basic(25,5)
+
+```
+Of course these numbers won't be the same, but they are close, and this means that either we didn't make any mistakes, or at least we made the same mistakes in both our analytical and empirical investigation. Either way, the ability to check one's answer gives students a sense of confidence.
+
+For obtaining the value of $k$ at which $E\left( \sum_{i=1}^{n} T_{i} \right) = n + nk(1 - (1-p)^{k})$ is minimized, we note that the function is convex in $k$ for $k > 0$ and take a derivative:
+$$
+\frac{d}{dk}E\left( \sum_{i=1}^{n} T_{i} \right) = N\times\left( \log{\left( \frac{1}{1-p} \right)}\times (1-p)^{k} - \frac{1}{k^{2}}\right)
+$$
+Solving this for zero is a good opportunity to introduce students to basic numerical techniques in `R`. To find the roots of a univariate function on a bounded interval, `R` provides the `uniroot` function:
+```{r uniroot-1}
+fprime <- function(k,N=5000,p=0.05) N * (log(1/(1-p))*(1-p)^k - 1/k^2)
+uniroot(fprime,c(1,10))
+```
+
+The correctness of the derivative calculation can be checked in two ways: by plotting it and comparing the location of the zero with the local optimum at $k = 5$, and the sign with the slopes of the original function for $k < 5$ and $k > 5$. This shows students how to plot a curve using ggplot: just create a dataframe with the x and y values, and proceed as normal. Some playing around helps to determine the appropriate x-values to use.
+```{r plot-fprime}
+data_frame(k = seq(4.5,10,by=0.01),
+           y = fprime(k)) %>%
+  ggplot(aes(x = k,y = y),group = 1) +
+  theme_classic() +
+  geom_line() +
+  geom_hline(yintercept = 0,colour = "red") +
+  geom_vline(xintercept = 5,colour = "purple") +
+  labs(title = "Derivative of Expected Number of Tests with Respect to Group Size",
+       subtitle = "Blood Pooling Example",
+       x = "Group Size (k)",
+       y = "Derivative of Expected Number of Tests") +
+  scale_x_continuous(breaks = 4:10)
+
+```
+Another way to check is to find the minimum of the function using `R`'s built in optimization routines, which do not require the user to specify the derivative. For constrained optimization (we need $k > 0$), `R` has the `nlminb` function:
+```{r nlminb-1}
+nlminb(start = 1,objective = expected_tests,lower = 1)
+```
+The fact that the minimum occurred at the same point as the zero of the derivative obtained by `uniroot` tells us that we computed our derivative correctly. Students also could have started using `nlminb` for the optimization, and then checked their answers using manual calculation of the derivative and `uniroot`.
+
+# Implementation
+
+How might an instructor implement this into a traditional lecture-based course? Without the computational component, the question as asked in an introductory probability course might be solved on the blackboard in lecture, solved with a TA during tutorial, or assigned for individual homework. Here we offer suggestions on how to integrate the computational aspect into each of these methods of delivery:
+
+1) *Solved on blackboard during lecture*: the instructor may prepare the simulation beforehand and project RStudio onto the screen, while solving the question on the blackboard. It can be helpful for students to first outline an algorithm for simulating the experiment; as described above, this clarifies understanding of the problem and all relevant variables. Each stage in the analytical solution can be referenced in the algorthmic description of the problem. For example, the first step in the analytical solution is to define a random variable representing the indicator of a group having any positive tests. This seems innocuous, but that already takes us through steps 1 - 5 of the algorithm, which has only 7 steps total! Once this is achieved, we claim that the random variable $Y_{i}$ as defined is $Bernoulli(\theta)$ with $\theta = 1 - (1-p)^{k}$- the simulation can be modified to verify this, and the instructor can solicit questions/comments from the students about how to do this.
+1) *Solved with a TA during tutorial*: if the course has tutorials, the TAs can be provided the example beforehand. The above procedure can be repeated in this smaller environment, but could be modified by having students bring their laptops to tutorial (or have the tutorial in a computer lab), and the TA assist/coach the students into developing the simulation interactively, much in the same way students might be coached in solving the analytical portion of the problem in such an environment. As well, tutorials are usually small enough that it may be feasible to split students into groups, and have each group focus on finding a solution.
+1) *Assigned as individual homework*: in this case, students can be asked to create the simulation themselves. The degree to which such a creation is self-directed by the student as opposed to guided by the instructor is dependent on how familiar the students are with this type of exercise. If this is the first time students have been asked to simulate something in the course (and there is no reasonable expectation of prior experience in this area) then the instructor may wish to provide example code, or even a complete implementation that the students run under various scenarios. If several such exercises have been presented in lecture or tutorial, then the question can be asked in a more open-ended format.
+
+For example, an open-ended question might ask:
+
+> For the experiment described above, implement a function in `R` that performs one simulation of this experiment. Run your function several times and average the results for each of $k = 1,2,5,8,10$, and create a `ggplot` line graph of the results. Add a line to this graph with your analytical solution for each value of $k$, and comment on any differences. Is the value of $k$ that minimizes the expected number of tests the same for the analytical vs simulated solutions?
+
+A more guided version of the question might provide a function that repeats the experiment many times and averages the results, for an input value of $k$. A question here might ask:
+
+> Use the provided `R` function to simulate this experiment multiple times and average the results for each of $k = 1,2,5,8,10$. Compare the results of the simulation to your analytical calculations. Are they close? Is the value of $k$ that minimizes the expected number of tests the same for the analytical vs simulated solutions?
+
+Both manners of evaluation allow students to approach the problem from both an analytical and empirical standpoint, and can help students develop confidence in their answers by completing the question in multiple ways (and seeing that the answers agree). The second method, where the instructor provides the simulation code, loses depth of student engagement in the empirical solution to the problem, but has a lower risk of shifting the focus onto irrelevant computational aspects. The decision of how to do this is highly course- and instructor-dependent.
+
+# Evaluating Student Participation
+
+Integrating computation into examples done in lecture or tutorial is fine, however if students know they won't be evaluated on this extra content, the incentive is for them to not participate. Here we give suggestions on how evaluations can be adapted to include the computational component of an example.
+
+## Example Multiple Choice Questions
+
+Multiple choice questions can be designed to be reasonably answerable when students have done the above work, and vague/unclear if they have not. Examples:
+
+
+
+## Example Short-Answer Questions
+
+A short-answer question, worth a small amount of marks on a test, might take the form of translating a description of an experiment into psuedocode. This captures the essence of computation without having students actually type anything, and hence is suitable for an in-class assessment. Example:
+
+
+
+Another potential form of a short answer question is to give students a description of and numerical output from a simulated experiment, and ask them to answer questions about the results of the experiment. Example:
+
+
+
+## Example Long-Answer Questions
+
+A longer type of test question might combine the above two example short answer questions, to give an evaluation of the entire exercise: describe the experiment, ask for simultation psuedocode, provide output, ask for summary of results. Example:
+
+
+
+## Example Take-Home Assignment Questions
+
+For a take-home assignment, the long-answer question above can be further extended so that students have to code up the simulation and make plots. More detailed questions can also be asked, since students will have the ability to perform further ad-hoc investigations as needed. Example: 
