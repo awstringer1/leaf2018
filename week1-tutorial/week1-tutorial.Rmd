@@ -1,0 +1,605 @@
+---
+title: "Tutorial: Law of Large Numbers and the Simulating Random Variables in R"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(dplyr)
+library(ggplot2)
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Law of Large Numbers
+
+In class, we learned the Law of Large Numbers, which states that the sample mean of independent random variables, each with the same finite mean and variance, converges in probability to the population mean- the common mean of the random variables. Or,
+
+$$
+\frac{1}{n}\sum_{i=1}^{n}X_{i} = \bar{X} \overset{p}{\rightarrow} E(X) = \mu
+$$
+Or,
+
+$$
+\lim_{n\rightarrow\infty} P\left( |\bar{X} - \mu| > \epsilon\right) = 0 \mbox{  } \forall \mbox{  } \epsilon > 0
+$$
+
+Practically, this means that if we take an independent random sample from a given population, then it is guaranteed that we can make this sample big enough to get a sample mean that is as close to the true mean as we want, with as high a probability as we want.
+
+However, in practice we usually only take one random sample of one size. So how can we verify this claim empirically? We would like to be able to take repeated random samples of any chosen size from a population for which we know the true mean, $\mu$. If we could do this, we could see how close $\bar{X}$ was to $\mu$ for given sample sizes.
+
+Let's look at how to use a computer, or more specifically, `R`, to simulate random variables.
+
+## Simulating Random Variables
+
+### Generate a single Unif(0,1)
+
+In `R`, there are numerous functions for generating psuedo-random numbers that follow certain distributions. For example, to generate one value from a $Unif(0,1)$ distribution,
+```{r simulate-1,echo=TRUE}
+runif(1)
+```
+
+Try it yourself: write `R` code that will produce a single realization of a $Unif(0,1)$ random variable. Run the code a few times- what do you expect to see?
+```{r simulate-2,exercise=TRUE}
+
+```
+
+```{r simulate-2-hint}
+runif()
+```
+
+### Generate a random sample from Unif(0,1)
+
+The `runif` function, short for *random uniform*, when called with single argument $1$, generates one single value from a $Unif(0,1)$ distribution. This means that, denoting by $X$ the random variable representing the output of calling `runif`, we have for any $x \in (0,1)$:
+
+$$
+P(X < x) = x
+$$
+
+How can we verify this empirically? If we had a random sample from the $Unif(0,1)$ distribution, $(x_{1},\ldots,x_{n})$ for some suitibly large $n$, we could estimate this probability as
+
+$$
+\hat{P} = \frac{1}{n}\sum_{i=1}^{n}I(x_{i} < x)
+$$
+where
+
+$$
+I(x_{i} < x) = \begin{cases} 1 \mbox{ if } x_{i} < x \\ 0 \mbox{ else } \end{cases}
+$$
+Let's modify our code to give us a random sample of size $n$. The most natural thing to do would be to use a loop:
+
+```{r simulate-3,echo=TRUE}
+# Set the sample size we want
+n <- 10
+# Create a vector to store the results
+samp <- numeric(n)
+# Fill it with realizations of a Unif(0,1) random variable
+for (i in 1:n) {
+  samp[i] <- runif(1)
+}
+# See what we did
+samp
+```
+This is not the most elegant way to do this. In fact, all of `R`'s random number generating functions have an argument for the number of random samples.
+
+In `R`, if you want to learn about the arguments (and many other aspects) of a built-in function, you type `?function-name`.
+
+**Exercise**: figure out which argument of `runif` determines the number of samples to return, and write one line of code that replicates the above `for`-loop, i.e. returns a random sample of size $n$ from a $Unif(0,1)$ distribution.
+
+```{r simulate-4,exercise=TRUE}
+
+```
+
+```{r simulate-4-hint}
+?runif
+```
+
+### Compute the emprical CDF of our random sample
+
+With our random sample in hand, we can write code to estimate the above probability- that is, estimate the *cumulative distribution function* of our generated sample, for any value $x \in (0,1)$.
+
+We will write a *function* to generate a random sample of a specified size from a a $Unif(0,1)$ distribution, and then return the predicted probability that $X < x$ for some provided $x$. Functions are a great way to compartmentalize sections of code you want to reuse. They have the following syntax:
+
+```{r simulate-5,echo=TRUE}
+myfunction <- function(argument1,argument2,...) {
+  # Code to execute goes here
+  
+  
+  # Value to return goes here
+  
+}
+```
+
+For example, if I wanted to generate a random sample of size $20$ from a $Unif(0,1)$ distribution and calculate its sample mean, I could do that as follows:
+```{r simulate-6,echo=TRUE}
+samp <- runif(20)
+mean(samp)
+```
+
+But now, if I wanted to repeat this experiment with a sample size of $200$, I would have to modify the code, which introduces the possibility of errors. If I knew I wanted to reuse that code for different values of $n$, I would put it in a function:
+```{r simulate-7,echo=TRUE}
+calculate_uniform_mean <- function(n) {
+  samp <- runif(n) # Here is where I use the argument to the function
+  mean(samp) # The function will return the last thing you type
+}
+
+print(calculate_uniform_mean(10))
+print(calculate_uniform_mean(20))
+print(calculate_uniform_mean(100))
+```
+
+Try writing your own function to compute $\hat{P}$ as described above. Call your function `uniform_cdf`. It should take as arguments $n$, the number of samples to draw, and $x$, the value for which to estimate $P(X < x)$.
+
+```{r simulate-8,exercise=TRUE}
+
+```
+```{r simulate-8-hint-1}
+uniform_cdf <- function(n,x) {
+  
+}
+```
+```{r simulate-8-hint-2}
+uniform_cdf <- function(n,x) {
+  # Generate sample
+  samp <- runif(n)
+}
+```
+```{r simulate-8-hint-3}
+uniform_cdf <- function(n,x) {
+  # Generate sample
+  samp <- runif(n)
+  # Estimate probability
+  mean(samp < x)
+}
+```
+```{r simulate-8-hint-4}
+uniform_cdf <- function(n,x) {
+  # Generate sample
+  samp <- runif(n)
+  # Estimate probability
+  mean(samp < x)
+}
+uniform_cdf(100,.5)
+```
+
+Run the code a few times- you should see that `uniform_cdf(n,x)` approximately equals `x`.
+
+### Generating from Unif(a,b)
+
+What about generating from another distribution, like a $Unif(a,b)$ for arbitrary $a,b$? You could generate from $Unif(0,1)$ and transform the results mathematically. This would require you finding a suitable transformation each time you wanted a sample from a different distribution.
+
+Fortunately, `R`'s simulation functions provide arguments to set the parameters of the distribution in question. Let's use `R`'s help feature to figure out how to do this to modify our `runif` code to generate a random sample from a $Unif(1,2)$ distribution.
+
+**Exercise**: simulate 10 values from a $Unif(1,2)$ distribution in 1 line of code. Remember to get help on a function in `R`, you type `?function-name`.
+
+```{r simulate-9,exercise=TRUE}
+
+```
+```{r simulate-9-hint-1}
+?runif
+```
+```{r simulate-9-hint-2}
+runif(n = 10)
+```
+```{r simulate-9-hint-3}
+runif(n = 10,min = 1,max = 2)
+```
+
+### Simulating from other distributions
+
+We have seen how to simulate from a uniform distribution. `R` has many other simulation functions that we can work with if we want random samples from other distributions. They all (with one exception) follow a common syntax: `rdist`, where `dist` is an abbreviated name of the distribution. Here is a table with the most common distributions, though there are many others:
+
+| R function | Distribution |
+|:---------- |:------------ |
+| `runif`    | Continuous Uniform |
+| `sample`   | Discrete Uniform |
+| `rnorm` | Normal |
+| `rgamma` | Gamma |
+| `rexp` | Exponential |
+| `rchisq` | Chi-Squared |
+| `rbeta` | Beta |
+| `rbinom` | Binomial |
+| `rpois` | Poisson |
+
+Each has different names for its arguments, which makes typing `?rnorm` and `rexp` and reading the resulting documentation a very valuable skill. They are all similar in their construction though: one argument for the size of the random sample, and one argument for each of the parameters of the distribution. For example, to generate a random sample of size $10$ from an Exponential distribution with mean $2$:
+```{r simulate-10,echo=TRUE}
+rexp(n = 10,rate = 1/2)
+```
+We figured that out by reading the documentation carefully: the `rexp` function takes parameter `rate`, which the documentation states is equal to `1/mean`.
+
+**Exercise**: simulate 10 values from a $N(0,1)$ distribution.
+```{r simulate-11,exercise=TRUE}
+
+```
+```{r simulate-11-hint-1}
+?rnorm
+```
+```{r simulate-11-hint-2}
+rnorm(10)
+```
+
+**Exercise**: simulate 10 values from a $N(3,6^2)$ distribution.
+```{r simulate-12,exercise=TRUE}
+
+```
+```{r simulate-12-hint-1}
+?rnorm
+```
+```{r simulate-12-hint-2}
+rnorm(10,3,6)
+```
+
+**Exercise**: simulate 10 values from a $Gamma$ distribution with shape 1 and rate 1.
+```{r simulate-13,exercise=TRUE}
+
+```
+```{r simulate-13-hint-1}
+?rgamma
+```
+```{r simulate-13-hint-2}
+rgamma(10)
+```
+
+**Exercise**: simulate 10 values from a $Gamma$ distribution with mean 3 and variance 9. Read the documentation to figure out how to correctly specify the mean and variance, using the parameters of the `rgamma` function.
+```{r simulate-14,exercise=TRUE}
+
+```
+```{r simulate-14-hint-1}
+?rgamma
+```
+```{r simulate-14-hint-2}
+rgamma(10,shape=1,scale=3)
+```
+
+**Exercise**: simulate 10 flips of a fair coin. Recall that a single flip of a fair coin has a $Binom(1,0.5)$ distribution.
+```{r simulate-15,exercise=TRUE}
+
+```
+```{r simulate-15-hint-1}
+?rbinom
+```
+```{r simulate-15-hint-2}
+rbinom(n=10,size=1,prob=0.5)
+```
+
+## Extended Example: Empirically Investigate the Law of Large Numbers
+
+### Simulation 1
+
+Recall from the beginning of the tutorial, the statement of the Law of Large Numbers: 
+$$
+\frac{1}{n}\sum_{i=1}^{n}X_{i} = \bar{X} \overset{p}{\rightarrow} E(X) = \mu
+$$
+How can we use the tools we have learned so far to perform an experiment to investigate this theorem? The theorem implies that in finite samples (for fixed, large $n$), the sample mean should be "close" to the population mean. Or more specifically, the chances of observing a sample mean that is "far" from the population mean are very low. This implies that if we generated random samples of increasing sizes and calculated the sample mean of each, as the size of the samples gets larger, these sample means should get closer and closer to the population mean.
+
+Our experiment, then, can be performed as follows:
+
+- For $n = 1, 2, \ldots N$, where we pick a suitably large $N$, generate a random sample of size $n$ from some distribution we choose (and whose mean we know)
+- Calculate the sample mean $\bar{x}_{n}$ from each sample, giving a sequence of sample means
+- Plot, or otherwise look at this sequence of means, and watch it get closer and closer to $E(X)$
+
+I will provide a function for plotting the sequence of means using `ggplot`.
+```{r lln-1-plotfunction,echo=TRUE}
+# library(ggplot2)
+# library(dplyr)
+plotmeans <- function(x,truemean,n=1:length(x)) {
+  # Function that returns a ggplot object containing a line plot of the data in x
+  # x: vector of sample means to plot
+  # truemean: the true mean of the distribution
+  # n: optional, labels for the x-axis. Set these to be the values of n to which each sample mean in x corresponds
+  
+  data_frame(x = x,n = n) %>%
+    ggplot(aes(x=n,y=x)) +
+    theme_light() +
+    geom_line() +
+    geom_hline(aes(yintercept = truemean),colour="red") +
+    scale_x_continuous(labels=scales::comma_format()) +
+    scale_y_continuous(labels=scales::comma_format()) +
+    labs(title="Observed Sample Means for various sample sizes",
+         subtitle="Red Line: true mean of distribution",
+         x="Sample Size",
+         y="Sample Mean")
+}
+```
+```{r lln-1-setup}
+plotmeans <- function(x,truemean,n=1:length(x)) {
+  # Function that returns a ggplot object containing a line plot of the data in x
+  # x: vector of sample means to plot
+  # truemean: the true mean of the distribution
+  # n: optional, labels for the x-axis. Set these to be the values of n to which each sample mean in x corresponds
+  
+  data_frame(x = x,n = n) %>%
+    ggplot(aes(x=n,y=x)) +
+    theme_light() +
+    geom_line() +
+    geom_hline(aes(yintercept = truemean),colour="red") +
+    scale_x_continuous(labels=scales::comma_format()) +
+    scale_y_continuous(labels=scales::comma_format()) +
+    labs(title="Observed Sample Means for various sample sizes",
+         subtitle="Red Line: true mean of distribution",
+         x="Sample Size",
+         y="Sample Mean")
+}
+```
+
+Let's evaluate this for the case of flipping a fair coin- or in statistical terms, generating independent $Binom(1,0.5)$ random variables. The sample mean is the proportion of coins that landed heads in the sample. We would expect that as we threw the coin more times, it would be less and less probable to see a value of this proportion that was far away from $0.5$.
+
+**Exercise**: for each value of $n = 1, \ldots 1,000$, calculate the sample mean obtained from throwing the coin $n$ times, and store the results in a vector. Then use the above function to create a line plot of the sample means you get. Comment on whether the results are what you expected- how close do the means get to $0.5$, and how long does it take for them to get close?
+
+```{r lln-1,exercise=TRUE}
+
+```
+```{r lln-1-hint-1}
+# Store the sample means in a vector
+mymeans <- numeric()
+```
+```{r lln-1-hint-2}
+# Store the sample means in a vector
+mymeans <- numeric()
+# Loop over the range of n
+for (n in 1:1000) {
+  
+}
+```
+```{r lln-1-hint-3}
+# Store the sample means in a vector
+mymeans <- numeric()
+# Loop over the range of n
+for (n in 1:1000) {
+  # Perform the experiment and store the result in the vector
+  mymeans[n] <- 
+}
+```
+```{r lln-1-hint-4}
+# Store the sample means in a vector
+mymeans <- numeric()
+# Loop over the range of n
+for (n in 1:1000) {
+  # Perform the experiment and store the result in the vector
+  mymeans[n] <- rbinom()
+}
+```
+```{r lln-1-hint-5}
+# Store the sample means in a vector
+mymeans <- numeric()
+# Loop over the range of n
+for (n in 1:1000) {
+  # Perform the experiment and store the result in the vector
+  mymeans[n] <- mean(rbinom(n,size=1,prob=0.5))
+}
+```
+```{r lln-1-hint-6}
+# Store the sample means in a vector
+mymeans <- numeric()
+# Loop over the range of n
+for (n in 1:1000) {
+  # Perform the experiment and store the result in the vector
+  mymeans[n] <- mean(rbinom(n,size=1,prob=0.5))
+}
+# Plot the results
+plotmeans(mymeans,truemean = 0.5)
+```
+
+### Simulation 2
+
+Were the results as expected?
+
+This experiment involved repeating the entire experiment for different values of $n$. An equivalent interpretation of the LLN is that if we kept flipping the coin, and updating the resulting proportion of heads observed, then this proportion should get closer and closer to $0.5$ as we flip the coin more times. That is, rather than performing independent experiments, let's continually increase the size of our one experiment, and watch how the sample mean changes.
+
+**Exercise**: Implement this second investigation of the LLN as follows: 
+
+- Flip a coin once, and compute $\bar{x}_{1} = x_{1}$ (this will be either 0 or 1).
+- For $n = 2,\ldots,1,000$:
+    - Flip a coin, obtaining $x_{n} \in \left\{0,1\right\}$
+    - Compute $\bar{x}_{n}$ by updating the previous sample mean: $\bar{x}_{n} = \frac{1}{n}\left( (n-1)\bar{x}_{n-1} + x_{n}\right)$
+- Plot the resulting sequence of $\bar{x}_{n}$ as in the previous investigation
+
+```{r lln-2,exercise=TRUE,exercise.setup="lln-1-setup"}
+
+```
+```{r lln-2-hint-1}
+# Store the sample means in a vector
+mymeans <- numeric()
+```
+```{r lln-2-hint-2}
+# Store the sample means in a vector
+mymeans <- numeric()
+# Compute the first sample mean
+mymeans[1] <- rbinom(1,1,0.5)
+```
+```{r lln-2-hint-3}
+# Store the sample means in a vector
+mymeans <- numeric()
+# Compute the first sample mean
+mymeans[1] <- rbinom(1,1,0.5)
+# Loop over the range of n
+for (n in 2:1000) {
+  
+}
+```
+```{r lln-2-hint-4}
+# Store the sample means in a vector
+mymeans <- numeric()
+# Compute the first sample mean
+mymeans[1] <- rbinom(1,1,0.5)
+# Loop over the range of n
+for (n in 2:1000) {
+  # Update the sample mean
+  mymeans[n] <- 
+}
+```
+```{r lln-2-hint-5}
+# Store the sample means in a vector
+mymeans <- numeric()
+# Compute the first sample mean
+mymeans[1] <- rbinom(1,1,0.5)
+# Loop over the range of n
+for (n in 2:1000) {
+  # Update the sample mean
+  mymeans[n] <- (1/n) * ((n-1)*mymeans[n-1] + rbinom(1,1,0.5))
+}
+```
+```{r lln-2-hint-6}
+# Store the sample means in a vector
+mymeans <- numeric()
+# Compute the first sample mean
+mymeans[1] <- rbinom(1,1,0.5)
+# Loop over the range of n
+for (n in 2:1000) {
+  # Update the sample mean
+  mymeans[n] <- (1/n) * ((n-1)*mymeans[n-1] + rbinom(1,1,0.5))
+}
+# Plot the results
+plotmeans(mymeans,truemean = 0.5)
+```
+
+The theorem still applies in this case, however the manner of convergence is not the same- it takes a while for early anomalies to get ironed out. You can modify the code, changing the number of coin flips, to see what happens as you flip it more times. Try $n = 2,000$, $n = 5,000$, $n = 10,000$, etc.
+
+### Simulation 3
+
+The statement in the theorem is actually a probability: as $n \rightarrow \infty$, $P(|\bar{X}_{n} - E(X)| > \epsilon) \rightarrow 0$ for all $\epsilon > 0$. This is a standard calculus-style limit: for any arbitrarily small $\delta, \epsilon$ that we choose, we can always make $n$ large enough so that the probability of observing an $\bar{x}$ that is farther than $\epsilon$ away from $\mu$ is less than $\delta$.
+
+Can we use simulation to estimate this probability? We saw earlier than to estimate a probability of an event, we can generate samples from the appropriate distribution, then compute the relative frequency with which the event happens in those samples. This suggests that to simulate the above probability, we could
+
+- Choose a pair $\delta,\epsilon$. Choose an $n$ we think is large enough to ensure that $P(|\bar{X}_{n} - \mu| > \epsilon) < \delta$.
+- Simulate some large number of random samples from the distribution of $X$, and calculate their sample means
+- Compute the relative frequency with which $|\bar{x}_{n} - \mu| > \epsilon$
+- If this relative frequency is $> \delta$, repeat the experiment with larger $n$. The theorem guarantees that we will be able to find an $n$ that works
+
+Are you ready to try this? It sounds like a lot of steps, but you have the tools you need from this tutorial. We will use $X \sim N(0,1)$ as a standard (so $E(X) = \mu = 0$), but the theorem works for any distribution with finite mean and variance.
+
+```{r lln-3,exercise=TRUE}
+
+```
+```{r lln-3-hint-1}
+# Define a function to perform the experiment for n, eps
+perform_experiment <- function(n,eps) {
+  
+}
+```
+```{r lln-3-hint-2}
+# Define a function to perform the experiment for n, eps
+perform_experiment <- function(n,eps) {
+  # Simulate B values from X
+  B <- 2000 # Arbitrary, large
+  samples_from_x <- list()
+}
+```
+```{r lln-3-hint-3}
+# Define a function to perform the experiment for n, eps
+perform_experiment <- function(n,eps) {
+  # Simulate B values from X
+  B <- 2000 # Arbitrary, large
+  samples_from_x <- numeric()
+  for (b in 1:B) {
+    
+  }
+}
+```
+```{r lln-3-hint-4}
+# Define a function to perform the experiment for n, eps
+perform_experiment <- function(n,eps) {
+  # Simulate B values from X and calculate their sample means
+  B <- 2000 # Arbitrary, large
+  samplemeans_from_x <- numeric()
+  for (b in 1:B) {
+    samplemeans_from_x[b] <- mean(rnorm(n,0,1))
+  }
+}
+```
+```{r lln-3-hint-5}
+# Define a function to perform the experiment for n, eps
+perform_experiment <- function(n,eps) {
+  # Simulate B values from X and calculate their sample means
+  B <- 2000 # Arbitrary, large
+  samplemeans_from_x <- numeric()
+  for (b in 1:B) {
+    samplemeans_from_x[b] <- mean(rnorm(n,0,1))
+  }
+  # Approximate the probability
+  mean(abs(samplemeans_from_x - 0) > eps)
+}
+```
+```{r lln-3-hint-6}
+# Define a function to perform the experiment for n, eps
+perform_experiment <- function(n,eps) {
+  # Simulate B values from X and calculate their sample means
+  B <- 2000 # Arbitrary, large
+  samplemeans_from_x <- numeric()
+  for (b in 1:B) {
+    samplemeans_from_x[b] <- mean(rnorm(n,0,1))
+  }
+  # Approximate the probability
+  mean(abs(samplemeans_from_x - 0) > eps)
+}
+# Perform the experiment. You should be able to make the result of this function as small as
+# you want by making n larger and larger- for any eps
+perform_experiment(10,0.1)
+```
+
+Try playing around with this, to see how the results change as you increase $n$ and decrease $\epsilon$. You can also change $\mu$- would you expect different values of $\mu$ to give different results, or not?
+
+When you're ready, you can proceed to the quiz. Be sure to actually try different values of $n, \epsilon, \mu$, as the quiz will ask about the effects of changing each of these.
+
+## Quiz
+
+Test your knowledge of the concepts in this module with the below quiz.
+
+```{r quiz-1}
+quiz(
+  question("The Law of Large Numbers as discussed in this course says that for a random variable with finite mean and variance, as the sample size goes to infinity,",
+    answer("The sample mean converges in probability to the population mean",correct=TRUE),
+    answer("The sample mean converges in distribution to the population mean"),
+    answer("The population mean converges in probability to the sample mean"),
+    answer("The population mean converges in distribution to the sample mean")
+  ),
+  question("The command for generating a single Unif(0,1) random number in R is:",
+    answer("Unif(0,1)"),
+    answer("randomUniform(1)"),
+    answer("runif(0,1)"),
+    answer("runif(1)",correct=TRUE)
+  ),
+  question("The command for generating a random sample of size n from a Unif(0,1) distribution in R is: ",
+    answer("runif(0,1,n)"),
+    answer("runif(1,n)"),
+    answer("runif(n)",correct=TRUE),
+    answer("runif(1,reps = n)")
+  ),
+  question("To get help for a built-in function in R, you type: ",
+    answer("help(function-name)",correct=TRUE),
+    answer("?function-name",correct=TRUE),
+    answer("function-name.help"),
+    answer("R does not have a built-in feature for getting help on functions; you have to Google it")
+  ),
+  question("If you want to reuse a piece of code in multiple places in your program, it is best practice to: ",
+    answer("Put your code in a function",correct=TRUE),
+    answer("Copy and paste the code, to save typing"),
+    answer("You shouldn't be reusing code, that's plagarism"),
+    answer("Put your code in a for loop")
+  ),
+  question("In the final simulation, what was the effect of increasing n, for fixed eps and mu?",
+    answer("The probability got smaller",correct=TRUE),
+    answer("The probability got bigger"),
+    answer("The probability stayed the same"),
+    answer("The probability may have gotten bigger or smaller, we can't say for sure")
+  ),
+  question("In the final simulation, what was the effect of decreasing eps, for fixed n and mu?",
+    answer("The probability got smaller"),
+    answer("The probability got bigger",correct=TRUE),
+    answer("The probability stayed the same"),
+    answer("The probability may have gotten bigger or smaller, we can't say for sure")
+  ),
+  question("In the final simulation, what was the effect of changing mu, for fixed n and epse?",
+    answer("The probability got smaller"),
+    answer("The probability got bigger"),
+    answer("The probability stayed the same",correct=TRUE),
+    answer("The probability may have gotten bigger or smaller, we can't say for sure")
+  ),
+  caption="Quiz: Law of Large Numbers"
+)
+```
+
+

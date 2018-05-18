@@ -48,7 +48,7 @@ While this question can be solved analytically with introductory probability at 
 
 ### Simulate One Experiment (Basic)
 
-Using mostly bae `R`, students may be guided to produce the following result:
+Using mostly base `R`, students may be guided to produce the following result:
 
 ```{r simulation-basic-1}
 
@@ -207,7 +207,7 @@ popsim <- numeric(N)
 for (i in 1:N) {
   popsim[i] <- rbinom(n = 1,size = 1,prob = p)
 }
-popsim
+print(popsim)
 ```
 which in 6 lines of code gives a basic introduction to data structures, variables, `R`'s loop syntax, printing data, and of course the `rbinom` function. 
 
@@ -223,6 +223,7 @@ The key concept to introduce to students here is that the manner in which the da
 We can do this by storing the data in a *data frame*. This concept can be introduced to the students, and then the construction can be shown:
 ```{r dataframe-1,echo = TRUE,eval=FALSE}
 popdataframe <- data_frame(disease = popsim)
+
 ```
 That one line of code contains several elements that can be unpacked and discussed with students:
 
@@ -231,7 +232,7 @@ That one line of code contains several elements that can be unpacked and discuss
 
 The result of the above command can be printed and viewed by the students:
 ```{r dataframe-2,eval=FALSE}
-popdataframe
+print(popdataframe)
 ```
 4. *Divide these into $n$ groups of size $k$*
 
@@ -288,7 +289,7 @@ This computation is an example of a very common computation in data anlaysis, th
 any_diseased <- popdataframe %>%
   group_by(group) %>%
   summarize(disease = max(disease))
-any_diseased
+print(any_diseased)
 ```
 6. *Sum up the number of tests performed across groups- $1$ test if the above indicator is zero, and $k+1$ tests if it equals 1*
 
@@ -306,7 +307,7 @@ for (i in 1:n) {
 }
 numtests
 ```
-This again has the advantage of being prescriptive, in the sense that students are taking their psuedocode from the beginning and translating it directly into compute code, reinforcing their depth of understanding of the procedure they are trying to implement.
+This again has the advantage of being prescriptive, in the sense that students are taking their psuedocode from the beginning and translating it directly into computer code, reinforcing their depth of understanding of the procedure they are trying to implement.
 
 We can modify this for the "advanced" approach by working inside the properly structured dataframe students have created. Having the group and the diseased state next to each other now allows us to again remain inside the dataframe when we do the next step: adding up the number of tests performed.
 ```{r summarize-3,eval=FALSE}

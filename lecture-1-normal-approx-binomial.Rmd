@@ -91,12 +91,12 @@ plt1
 Adding up the heights of the bars gives us an idea of the relative frequencies with which each number of heads would occur. We see the value for $61$ is just under $1\%$, which is what we saw in our previous single trial.
 
 We just derived a special case of the *Binomial* distribution, the distribution of the number of $1$'s in $n$ independent Bernoulli trials:
+
 $$
 \begin{aligned}
-&X_{i} \overset{IID}{\sim} Bern(p) \\
-\implies& \sum_{i=1}^{n}X_{i} \sim Binom(n,p) \\
-\implies& P\left( \sum_{i=1}^{n}X_{i} = k\right) = {n \choose k}p^{k}(1-p)^{n-k}
-
+X_{i} &\overset{IID}{\sim} Bern(p) \\
+\implies \sum_{i=1}^{n}X_{i} &\sim Binom(n,p) \\
+\implies P\left( \sum_{i=1}^{n}X_{i} = k\right) &= {n \choose k}p^{k}(1-p)^{n-k} \\
 \end{aligned}
 $$
 You may have seen this in your previous probability courses.
