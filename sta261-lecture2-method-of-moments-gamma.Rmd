@@ -1,0 +1,23 @@
+---
+title: "STA261 Summer 2018 Lecture 2:" 
+subtitle: "Method of Moments for Gamma-distributed data"
+author: "Alex Stringer"
+date: '`r Sys.Date()`'
+output: 
+  html_document:
+    toc: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup-noshow, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r setup-show,include=TRUE}
+# Load the tidyverse packages
+suppressMessages({
+  suppressWarnings({
+    library(tidyverse)
+  })
+})
+```
