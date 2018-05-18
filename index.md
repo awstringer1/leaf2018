@@ -19,4 +19,4 @@ Materials that can be used during lecture as a supplement to traditional slides 
 ### Learnr Tutorials
 Hosted tutorials on course concepts writtedn using the **learnr** package in R.
 
-(STA261): [Learnr tutorial on Law of Large Numbers and simulating random variables in R](https://awstringer1.shinyapps.io/week1-tutorial/)
+(STA261): [Learnr tutorial on Law of Large Numbers and simulating random variables in R](https://awstringer1.shinyapps.io/sta261-normal-approx-binomial/)

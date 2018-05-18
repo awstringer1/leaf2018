@@ -63,7 +63,7 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 <h3>Generate a single Unif(0,1)</h3>
 <p>In <code>R</code>, there are numerous functions for generating psuedo-random numbers that follow certain distributions. For example, to generate one value from a <span class="math inline">\(Unif(0,1)\)</span> distribution,</p>
 <pre class="r"><code>runif(1)</code></pre>
-<pre><code>## [1] 0.9526075</code></pre>
+<pre><code>## [1] 0.7203029</code></pre>
 Try it yourself: write <code>R</code> code that will produce a single realization of a <span class="math inline">\(Unif(0,1)\)</span> random variable. Run the code a few times- what do you expect to see?
 <div class="tutorial-exercise" data-label="simulate-2" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="0">
 <script type="application/json" data-opts-chunk="1">{"fig.width":6.5,"fig.height":4,"fig.retina":2,"fig.align":"default","fig.keep":"high","fig.show":"asis","out.width":624,"warning":true,"error":false,"message":true,"exercise.df_print":"paged","exercise.checker":"NULL"}</script>
@@ -95,8 +95,8 @@ for (i in 1:n) {
 }
 # See what we did
 samp</code></pre>
-<pre><code>##  [1] 0.72995170 0.40629843 0.68576177 0.33656527 0.78351141 0.20351142
-##  [7] 0.60192608 0.11396285 0.03438426 0.32251305</code></pre>
+<pre><code>##  [1] 0.93197736 0.73113739 0.53450747 0.18988701 0.99187314 0.55135698
+##  [7] 0.09184829 0.36510415 0.86632008 0.05340253</code></pre>
 <p>This is not the most elegant way to do this. In fact, all of <code>R</code>’s random number generating functions have an argument for the number of random samples.</p>
 <p>In <code>R</code>, if you want to learn about the arguments (and many other aspects) of a built-in function, you type <code>?function-name</code>.</p>
 <p><strong>Exercise</strong>: figure out which argument of <code>runif</code> determines the number of samples to return, and write one line of code that replicates the above <code>for</code>-loop, i.e. returns a random sample of size <span class="math inline">\(n\)</span> from a <span class="math inline">\(Unif(0,1)\)</span> distribution.</p>
@@ -121,7 +121,7 @@ samp</code></pre>
 <p>For example, if I wanted to generate a random sample of size <span class="math inline">\(20\)</span> from a <span class="math inline">\(Unif(0,1)\)</span> distribution and calculate its sample mean, I could do that as follows:</p>
 <pre class="r"><code>samp &lt;- runif(20)
 mean(samp)</code></pre>
-<pre><code>## [1] 0.4979203</code></pre>
+<pre><code>## [1] 0.5892559</code></pre>
 <p>But now, if I wanted to repeat this experiment with a sample size of <span class="math inline">\(200\)</span>, I would have to modify the code, which introduces the possibility of errors. If I knew I wanted to reuse that code for different values of <span class="math inline">\(n\)</span>, I would put it in a function:</p>
 <pre class="r"><code>calculate_uniform_mean &lt;- function(n) {
   samp &lt;- runif(n) # Here is where I use the argument to the function
@@ -129,11 +129,11 @@ mean(samp)</code></pre>
 }
 
 print(calculate_uniform_mean(10))</code></pre>
-<pre><code>## [1] 0.5941849</code></pre>
+<pre><code>## [1] 0.4761033</code></pre>
 <pre class="r"><code>print(calculate_uniform_mean(20))</code></pre>
-<pre><code>## [1] 0.5674415</code></pre>
+<pre><code>## [1] 0.4845534</code></pre>
 <pre class="r"><code>print(calculate_uniform_mean(100))</code></pre>
-<pre><code>## [1] 0.470983</code></pre>
+<pre><code>## [1] 0.4736911</code></pre>
 <p>Try writing your own function to compute <span class="math inline">\(\hat{P}\)</span> as described above. Call your function <code>uniform_cdf</code>. It should take as arguments <span class="math inline">\(n\)</span>, the number of samples to draw, and <span class="math inline">\(x\)</span>, the value for which to estimate <span class="math inline">\(P(X &lt; x)\)</span>.</p>
 <div class="tutorial-exercise" data-label="simulate-8" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="0">
 <script type="application/json" data-opts-chunk="1">{"fig.width":6.5,"fig.height":4,"fig.retina":2,"fig.align":"default","fig.keep":"high","fig.show":"asis","out.width":624,"warning":true,"error":false,"message":true,"exercise.df_print":"paged","exercise.checker":"NULL"}</script>
@@ -237,8 +237,8 @@ uniform_cdf(100,.5)</code></pre>
 </table>
 <p>Each has different names for its arguments, which makes typing <code>?rnorm</code> and <code>rexp</code> and reading the resulting documentation a very valuable skill. They are all similar in their construction though: one argument for the size of the random sample, and one argument for each of the parameters of the distribution. For example, to generate a random sample of size <span class="math inline">\(10\)</span> from an Exponential distribution with mean <span class="math inline">\(2\)</span>:</p>
 <pre class="r"><code>rexp(n = 10,rate = 1/2)</code></pre>
-<pre><code>##  [1] 0.507742871 1.622771700 0.233892406 1.519572214 3.807288617
-##  [6] 0.006985938 2.249199571 2.103823478 6.561761900 0.880369077</code></pre>
+<pre><code>##  [1] 3.73622127 1.92251374 4.45481119 8.52503797 8.85848814 1.68769874
+##  [7] 0.27114022 0.08533284 0.93744027 0.58155833</code></pre>
 <p>We figured that out by reading the documentation carefully: the <code>rexp</code> function takes parameter <code>rate</code>, which the documentation states is equal to <code>1/mean</code>.</p>
 <strong>Exercise</strong>: simulate 10 values from a <span class="math inline">\(N(0,1)\)</span> distribution.
 <div class="tutorial-exercise" data-label="simulate-11" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="0">
@@ -568,105 +568,105 @@ perform_experiment(10,0.1)</code></pre>
 <tr>
 <td>
 
-<div id="htmlwidget-67c0f695a71abe94d7d9" style="width:100%;height:auto;", class = "quiz html-widget">
+<div id="htmlwidget-7d242ab2785bc7b78daa" style="width:100%;height:auto;", class = "quiz html-widget">
 <div class="panel panel-default">
 <div class="panel-body quizArea">
 </div>
 </div>
 </div>
 
-<script type="application/json" data-for="htmlwidget-67c0f695a71abe94d7d9">{"x":{"question":"The Law of Large Numbers as discussed in this course says that for a random variable with finite mean and variance, as the sample size goes to infinity,","answers":[{"option":"The sample mean converges in probability to the population mean","correct":true,"message":null},{"option":"The sample mean converges in distribution to the population mean","correct":false,"message":null},{"option":"The population mean converges in probability to the sample mean","correct":false,"message":null},{"option":"The population mean converges in distribution to the sample mean","correct":false,"message":null}],"label":"quiz-1-1","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":false,"randomSortAnswers":false,"json":{"info":{"name":"","main":""},"questions":[{"q":"The Law of Large Numbers as discussed in this course says that for a random variable with finite mean and variance, as the sample size goes to infinity,","a":[{"option":"The sample mean converges in probability to the population mean","correct":true,"message":null},{"option":"The sample mean converges in distribution to the population mean","correct":false,"message":null},{"option":"The population mean converges in probability to the sample mean","correct":false,"message":null},{"option":"The population mean converges in distribution to the sample mean","correct":false,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-7d242ab2785bc7b78daa">{"x":{"question":"The Law of Large Numbers as discussed in this course says that for a random variable with finite mean and variance, as the sample size goes to infinity,","answers":[{"option":"The sample mean converges in probability to the population mean","correct":true,"message":null},{"option":"The sample mean converges in distribution to the population mean","correct":false,"message":null},{"option":"The population mean converges in probability to the sample mean","correct":false,"message":null},{"option":"The population mean converges in distribution to the sample mean","correct":false,"message":null}],"label":"quiz-1-1","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":false,"randomSortAnswers":false,"json":{"info":{"name":"","main":""},"questions":[{"q":"The Law of Large Numbers as discussed in this course says that for a random variable with finite mean and variance, as the sample size goes to infinity,","a":[{"option":"The sample mean converges in probability to the population mean","correct":true,"message":null},{"option":"The sample mean converges in distribution to the population mean","correct":false,"message":null},{"option":"The population mean converges in probability to the sample mean","correct":false,"message":null},{"option":"The population mean converges in distribution to the sample mean","correct":false,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
 </td>
 </tr>
 <tr>
 <td>
 
-<div id="htmlwidget-30b9d1902bfbc1d07462" style="width:100%;height:auto;", class = "quiz html-widget">
+<div id="htmlwidget-2317ac7026bd8ff2bc1b" style="width:100%;height:auto;", class = "quiz html-widget">
 <div class="panel panel-default">
 <div class="panel-body quizArea">
 </div>
 </div>
 </div>
 
-<script type="application/json" data-for="htmlwidget-30b9d1902bfbc1d07462">{"x":{"question":"The command for generating a single Unif(0,1) random number in R is:","answers":[{"option":"Unif(0,1)","correct":false,"message":null},{"option":"randomUniform(1)","correct":false,"message":null},{"option":"runif(0,1)","correct":false,"message":null},{"option":"runif(1)","correct":true,"message":null}],"label":"quiz-1-2","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":false,"randomSortAnswers":false,"json":{"info":{"name":"","main":""},"questions":[{"q":"The command for generating a single Unif(0,1) random number in R is:","a":[{"option":"Unif(0,1)","correct":false,"message":null},{"option":"randomUniform(1)","correct":false,"message":null},{"option":"runif(0,1)","correct":false,"message":null},{"option":"runif(1)","correct":true,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-2317ac7026bd8ff2bc1b">{"x":{"question":"The command for generating a single Unif(0,1) random number in R is:","answers":[{"option":"Unif(0,1)","correct":false,"message":null},{"option":"randomUniform(1)","correct":false,"message":null},{"option":"runif(0,1)","correct":false,"message":null},{"option":"runif(1)","correct":true,"message":null}],"label":"quiz-1-2","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":false,"randomSortAnswers":false,"json":{"info":{"name":"","main":""},"questions":[{"q":"The command for generating a single Unif(0,1) random number in R is:","a":[{"option":"Unif(0,1)","correct":false,"message":null},{"option":"randomUniform(1)","correct":false,"message":null},{"option":"runif(0,1)","correct":false,"message":null},{"option":"runif(1)","correct":true,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
 </td>
 </tr>
 <tr>
 <td>
 
-<div id="htmlwidget-b05b34993e3fc7bbe668" style="width:100%;height:auto;", class = "quiz html-widget">
+<div id="htmlwidget-71f5c74e267f5cb4a2d9" style="width:100%;height:auto;", class = "quiz html-widget">
 <div class="panel panel-default">
 <div class="panel-body quizArea">
 </div>
 </div>
 </div>
 
-<script type="application/json" data-for="htmlwidget-b05b34993e3fc7bbe668">{"x":{"question":"The command for generating a random sample of size n from a Unif(0,1) distribution in R is: ","answers":[{"option":"runif(0,1,n)","correct":false,"message":null},{"option":"runif(1,n)","correct":false,"message":null},{"option":"runif(n)","correct":true,"message":null},{"option":"runif(1,reps = n)","correct":false,"message":null}],"label":"quiz-1-3","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":false,"randomSortAnswers":false,"json":{"info":{"name":"","main":""},"questions":[{"q":"The command for generating a random sample of size n from a Unif(0,1) distribution in R is: ","a":[{"option":"runif(0,1,n)","correct":false,"message":null},{"option":"runif(1,n)","correct":false,"message":null},{"option":"runif(n)","correct":true,"message":null},{"option":"runif(1,reps = n)","correct":false,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-71f5c74e267f5cb4a2d9">{"x":{"question":"The command for generating a random sample of size n from a Unif(0,1) distribution in R is: ","answers":[{"option":"runif(0,1,n)","correct":false,"message":null},{"option":"runif(1,n)","correct":false,"message":null},{"option":"runif(n)","correct":true,"message":null},{"option":"runif(1,reps = n)","correct":false,"message":null}],"label":"quiz-1-3","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":false,"randomSortAnswers":false,"json":{"info":{"name":"","main":""},"questions":[{"q":"The command for generating a random sample of size n from a Unif(0,1) distribution in R is: ","a":[{"option":"runif(0,1,n)","correct":false,"message":null},{"option":"runif(1,n)","correct":false,"message":null},{"option":"runif(n)","correct":true,"message":null},{"option":"runif(1,reps = n)","correct":false,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
 </td>
 </tr>
 <tr>
 <td>
 
-<div id="htmlwidget-49c1409a5bcfeceddb5d" style="width:100%;height:auto;", class = "quiz html-widget">
+<div id="htmlwidget-09a0776a60e208e98bc6" style="width:100%;height:auto;", class = "quiz html-widget">
 <div class="panel panel-default">
 <div class="panel-body quizArea">
 </div>
 </div>
 </div>
 
-<script type="application/json" data-for="htmlwidget-49c1409a5bcfeceddb5d">{"x":{"question":"To get help for a built-in function in R, you type: ","answers":[{"option":"help(function-name)","correct":true,"message":null},{"option":"?function-name","correct":true,"message":null},{"option":"function-name.help","correct":false,"message":null},{"option":"R does not have a built-in feature for getting help on functions; you have to Google it","correct":false,"message":null}],"label":"quiz-1-4","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":false,"randomSortAnswers":false,"json":{"info":{"name":"","main":""},"questions":[{"q":"To get help for a built-in function in R, you type: ","a":[{"option":"help(function-name)","correct":true,"message":null},{"option":"?function-name","correct":true,"message":null},{"option":"function-name.help","correct":false,"message":null},{"option":"R does not have a built-in feature for getting help on functions; you have to Google it","correct":false,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-09a0776a60e208e98bc6">{"x":{"question":"To get help for a built-in function in R, you type: ","answers":[{"option":"help(function-name)","correct":true,"message":null},{"option":"?function-name","correct":true,"message":null},{"option":"function-name.help","correct":false,"message":null},{"option":"R does not have a built-in feature for getting help on functions; you have to Google it","correct":false,"message":null}],"label":"quiz-1-4","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":false,"randomSortAnswers":false,"json":{"info":{"name":"","main":""},"questions":[{"q":"To get help for a built-in function in R, you type: ","a":[{"option":"help(function-name)","correct":true,"message":null},{"option":"?function-name","correct":true,"message":null},{"option":"function-name.help","correct":false,"message":null},{"option":"R does not have a built-in feature for getting help on functions; you have to Google it","correct":false,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
 </td>
 </tr>
 <tr>
 <td>
 
-<div id="htmlwidget-4721a800e9f6639c3c1a" style="width:100%;height:auto;", class = "quiz html-widget">
+<div id="htmlwidget-06e7a5973340d250e9d3" style="width:100%;height:auto;", class = "quiz html-widget">
 <div class="panel panel-default">
 <div class="panel-body quizArea">
 </div>
 </div>
 </div>
 
-<script type="application/json" data-for="htmlwidget-4721a800e9f6639c3c1a">{"x":{"question":"If you want to reuse a piece of code in multiple places in your program, it is best practice to: ","answers":[{"option":"Put your code in a function","correct":true,"message":null},{"option":"Copy and paste the code, to save typing","correct":false,"message":null},{"option":"You shouldn&#39;t be reusing code, that&#39;s plagarism","correct":false,"message":null},{"option":"Put your code in a for loop","correct":false,"message":null}],"label":"quiz-1-5","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":false,"randomSortAnswers":false,"json":{"info":{"name":"","main":""},"questions":[{"q":"If you want to reuse a piece of code in multiple places in your program, it is best practice to: ","a":[{"option":"Put your code in a function","correct":true,"message":null},{"option":"Copy and paste the code, to save typing","correct":false,"message":null},{"option":"You shouldn&#39;t be reusing code, that&#39;s plagarism","correct":false,"message":null},{"option":"Put your code in a for loop","correct":false,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-06e7a5973340d250e9d3">{"x":{"question":"If you want to reuse a piece of code in multiple places in your program, it is best practice to: ","answers":[{"option":"Put your code in a function","correct":true,"message":null},{"option":"Copy and paste the code, to save typing","correct":false,"message":null},{"option":"You shouldn&#39;t be reusing code, that&#39;s plagarism","correct":false,"message":null},{"option":"Put your code in a for loop","correct":false,"message":null}],"label":"quiz-1-5","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":false,"randomSortAnswers":false,"json":{"info":{"name":"","main":""},"questions":[{"q":"If you want to reuse a piece of code in multiple places in your program, it is best practice to: ","a":[{"option":"Put your code in a function","correct":true,"message":null},{"option":"Copy and paste the code, to save typing","correct":false,"message":null},{"option":"You shouldn&#39;t be reusing code, that&#39;s plagarism","correct":false,"message":null},{"option":"Put your code in a for loop","correct":false,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
 </td>
 </tr>
 <tr>
 <td>
 
-<div id="htmlwidget-261fe3b3511845d34c33" style="width:100%;height:auto;", class = "quiz html-widget">
+<div id="htmlwidget-b01c8c10a62b03cf5f96" style="width:100%;height:auto;", class = "quiz html-widget">
 <div class="panel panel-default">
 <div class="panel-body quizArea">
 </div>
 </div>
 </div>
 
-<script type="application/json" data-for="htmlwidget-261fe3b3511845d34c33">{"x":{"question":"In the final simulation, what was the effect of increasing n, for fixed eps and mu?","answers":[{"option":"The probability got smaller","correct":true,"message":null},{"option":"The probability got bigger","correct":false,"message":null},{"option":"The probability stayed the same","correct":false,"message":null},{"option":"The probability may have gotten bigger or smaller, we can&#39;t say for sure","correct":false,"message":null}],"label":"quiz-1-6","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":false,"randomSortAnswers":false,"json":{"info":{"name":"","main":""},"questions":[{"q":"In the final simulation, what was the effect of increasing n, for fixed eps and mu?","a":[{"option":"The probability got smaller","correct":true,"message":null},{"option":"The probability got bigger","correct":false,"message":null},{"option":"The probability stayed the same","correct":false,"message":null},{"option":"The probability may have gotten bigger or smaller, we can&#39;t say for sure","correct":false,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-b01c8c10a62b03cf5f96">{"x":{"question":"In the final simulation, what was the effect of increasing n, for fixed eps and mu?","answers":[{"option":"The probability got smaller","correct":true,"message":null},{"option":"The probability got bigger","correct":false,"message":null},{"option":"The probability stayed the same","correct":false,"message":null},{"option":"The probability may have gotten bigger or smaller, we can&#39;t say for sure","correct":false,"message":null}],"label":"quiz-1-6","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":false,"randomSortAnswers":false,"json":{"info":{"name":"","main":""},"questions":[{"q":"In the final simulation, what was the effect of increasing n, for fixed eps and mu?","a":[{"option":"The probability got smaller","correct":true,"message":null},{"option":"The probability got bigger","correct":false,"message":null},{"option":"The probability stayed the same","correct":false,"message":null},{"option":"The probability may have gotten bigger or smaller, we can&#39;t say for sure","correct":false,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
 </td>
 </tr>
 <tr>
 <td>
 
-<div id="htmlwidget-72c8997e97199d252569" style="width:100%;height:auto;", class = "quiz html-widget">
+<div id="htmlwidget-b2287dcf03fe1a207f63" style="width:100%;height:auto;", class = "quiz html-widget">
 <div class="panel panel-default">
 <div class="panel-body quizArea">
 </div>
 </div>
 </div>
 
-<script type="application/json" data-for="htmlwidget-72c8997e97199d252569">{"x":{"question":"In the final simulation, what was the effect of decreasing eps, for fixed n and mu?","answers":[{"option":"The probability got smaller","correct":false,"message":null},{"option":"The probability got bigger","correct":true,"message":null},{"option":"The probability stayed the same","correct":false,"message":null},{"option":"The probability may have gotten bigger or smaller, we can&#39;t say for sure","correct":false,"message":null}],"label":"quiz-1-7","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":false,"randomSortAnswers":false,"json":{"info":{"name":"","main":""},"questions":[{"q":"In the final simulation, what was the effect of decreasing eps, for fixed n and mu?","a":[{"option":"The probability got smaller","correct":false,"message":null},{"option":"The probability got bigger","correct":true,"message":null},{"option":"The probability stayed the same","correct":false,"message":null},{"option":"The probability may have gotten bigger or smaller, we can&#39;t say for sure","correct":false,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-b2287dcf03fe1a207f63">{"x":{"question":"In the final simulation, what was the effect of decreasing eps, for fixed n and mu?","answers":[{"option":"The probability got smaller","correct":false,"message":null},{"option":"The probability got bigger","correct":true,"message":null},{"option":"The probability stayed the same","correct":false,"message":null},{"option":"The probability may have gotten bigger or smaller, we can&#39;t say for sure","correct":false,"message":null}],"label":"quiz-1-7","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":false,"randomSortAnswers":false,"json":{"info":{"name":"","main":""},"questions":[{"q":"In the final simulation, what was the effect of decreasing eps, for fixed n and mu?","a":[{"option":"The probability got smaller","correct":false,"message":null},{"option":"The probability got bigger","correct":true,"message":null},{"option":"The probability stayed the same","correct":false,"message":null},{"option":"The probability may have gotten bigger or smaller, we can&#39;t say for sure","correct":false,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
 </td>
 </tr>
 <tr>
 <td>
 
-<div id="htmlwidget-ffff1030c662d40f8835" style="width:100%;height:auto;", class = "quiz html-widget">
+<div id="htmlwidget-7ba0e33a62f5c429c871" style="width:100%;height:auto;", class = "quiz html-widget">
 <div class="panel panel-default">
 <div class="panel-body quizArea">
 </div>
 </div>
 </div>
 
-<script type="application/json" data-for="htmlwidget-ffff1030c662d40f8835">{"x":{"question":"In the final simulation, what was the effect of changing mu, for fixed n and epse?","answers":[{"option":"The probability got smaller","correct":false,"message":null},{"option":"The probability got bigger","correct":false,"message":null},{"option":"The probability stayed the same","correct":true,"message":null},{"option":"The probability may have gotten bigger or smaller, we can&#39;t say for sure","correct":false,"message":null}],"label":"quiz-1-8","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":false,"randomSortAnswers":false,"json":{"info":{"name":"","main":""},"questions":[{"q":"In the final simulation, what was the effect of changing mu, for fixed n and epse?","a":[{"option":"The probability got smaller","correct":false,"message":null},{"option":"The probability got bigger","correct":false,"message":null},{"option":"The probability stayed the same","correct":true,"message":null},{"option":"The probability may have gotten bigger or smaller, we can&#39;t say for sure","correct":false,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-7ba0e33a62f5c429c871">{"x":{"question":"In the final simulation, what was the effect of changing mu, for fixed n and epse?","answers":[{"option":"The probability got smaller","correct":false,"message":null},{"option":"The probability got bigger","correct":false,"message":null},{"option":"The probability stayed the same","correct":true,"message":null},{"option":"The probability may have gotten bigger or smaller, we can&#39;t say for sure","correct":false,"message":null}],"label":"quiz-1-8","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":false,"randomSortAnswers":false,"json":{"info":{"name":"","main":""},"questions":[{"q":"In the final simulation, what was the effect of changing mu, for fixed n and epse?","a":[{"option":"The probability got smaller","correct":false,"message":null},{"option":"The probability got bigger","correct":false,"message":null},{"option":"The probability stayed the same","correct":true,"message":null},{"option":"The probability may have gotten bigger or smaller, we can&#39;t say for sure","correct":false,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
 </td>
 </tr>
 </table>
