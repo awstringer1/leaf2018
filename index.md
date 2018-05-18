@@ -16,6 +16,7 @@ Materials that can be used during lecture as a supplement to traditional slides 
 
 (STA 261): [Normal Approximation to Binomial](http://awstringer1.github.io/leaf2018/lecture-1-normal-approx-binomial.html)
 
+(STA 261): [Fitting a Gamma distribution to rainfall data](http://awstringer1.github.io/leaf2018/sta261-lecture2-method-of-moments-gamma.html)
 ### Learnr Tutorials
 Hosted tutorials on course concepts writtedn using the **learnr** package in R.
 
