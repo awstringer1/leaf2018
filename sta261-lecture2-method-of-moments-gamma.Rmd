@@ -84,7 +84,7 @@ This is another way of showing that our chosen probability distribution is not f
 
 We can try what was originally suggested by the textbook: a $Gamma(\alpha,\lambda)$ distribution with density
 $$
-f(x;\lambda,\beta) = \frac{\lambda^{\alpha}}{\Gamma{\alpha}} x^{\alpha-1}\exp\left( -\lambda x\right)
+f(x;\lambda,\beta) = \frac{\lambda^{\alpha}}{\Gamma{(\alpha})} x^{\alpha-1}\exp\left( -\lambda x\right)
 $$
 This has the property that $Gamma(1,\lambda) \overset{d}{=} Exponential(\lambda)$ (with the rate parametrization), so it can be viewed as a direct extension of our previous model. The first two moments are
 $$
