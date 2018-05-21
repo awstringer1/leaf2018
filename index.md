@@ -27,7 +27,7 @@ Hosted tutorials on course concepts writtedn using the **learnr** package in R.
 # Datasets
 Below is a collection of readily available datasets that instructors can use for examples, assignments, and tests. The table includes a description of the dataset, the source, and key features/suggested uses. When the dataset is from an R package, the documentation within that package will provide a qualitative description of the data; here I focussed on only the statistical qualities of the data (e.g. how many variables, data types, and so on) to make it easy to browse the list for a dataset that fits your particular needs. In cases when the dataset is not from an already-documented R package, a bit more context is provided.
 
-<div class="datatable-begin"></div>
+<div class="table-wrapper" markdown="block">
 
 | Dataset | Source | Features | Suggested Uses | Comments/Notes |
 |---------|--------|----------|----------------|----------------|
@@ -41,4 +41,4 @@ Below is a collection of readily available datasets that instructors can use for
 | Salmonella data | data(salmonella); R package **faraway** | Count response, one discrete covariate with 6 levels | Count regression, dose-response model | Simple example of a variable transformation improving model fit. The log-linear model of dose fits the data poorly; transforming dose to log(dose + 1) improves the fit |
 | Wafer data | data(wafer); R package **faraway** | 
  
-<div class="datatable-end"></div>
+</div>
