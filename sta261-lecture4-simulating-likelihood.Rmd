@@ -22,6 +22,8 @@ suppressMessages({
 })
 ```
 
+# Likelihood
+
 Recall in lecture how we defined the *likelihood* function: for a random vector $X = (X_{1},\ldots,X_{n})$ whose joint distribution depends on parameter $\theta = (\theta_{1},\ldots,\theta_{p})$, the likelihood function is the joint density/mass function of $X$ treated as a function of $\theta$ for fixed $X$:
 \[
 L(\theta | X) = f(x ; \theta)
@@ -36,6 +38,9 @@ For computational and theoretical reasons, we said we would work primarily with 
 \]
 What does it mean, "for fixed $X$"? **Every time we take a ranodm sample $x = (x_{1},\ldots,x_{n})$, we get a different log-likelihood function**. This is the point: the likelihood describes the relative frequency with which each value of $\theta$ would have generated the observed data, in repeated sampling from a population with true parameter eqaul to $\theta$. Values of $\theta$ that give higher likelihoods would generate the observed data more frequently- and hence are said to be *more likely* to have generated the observed data.
 
+# Examples
+
+## Bernoulli($\theta$)
 Let's take a look at this empirically. First we generate a single sample of size $n = 5$ from a $Bern(\theta)$ distribution, with $\theta_{0} = 0.5$ as the true value, and plot the log-likelihood. The log-likelihood for these data is
 \[
 \ell(\theta) = \sum_{i=1}^{n}x_{i} \log{\theta} + \left( n - \sum_{i=1}^{n}x_{i} \right)\log\left( 1 - \theta \right)
@@ -57,7 +62,7 @@ data_frame(theta = seq(.01,.99,by=.01),
   ggplot(aes(x = theta,y = ll,group = 1)) +
   theme_classic() +
   geom_line() +
-  geom_vline(xintercept = sum(samp) / length(samp),colour = "purple") +
+  geom_vline(xintercept = mean(samp),colour = "purple") +
   geom_vline(xintercept = thetatrue,colour = "red") +
   scale_x_continuous(breaks = seq(0,1,by=.1)) +
   scale_y_continuous(breaks = seq(0,-15,by=-1)) +
@@ -102,7 +107,7 @@ data_frame(theta = seq(.01,.99,by=.01),
   ggplot(aes(x = theta,y = ll,group = 1)) +
   theme_classic() +
   geom_line() +
-  geom_vline(xintercept = sum(samp) / length(samp),colour = "purple") +
+  geom_vline(xintercept = mean(samp),colour = "purple") +
   geom_vline(xintercept = thetatrue,colour = "red") +
   scale_x_continuous(breaks = seq(0,1,by=.1)) +
   scale_y_continuous(breaks = seq(0,-15,by=-1)) +
@@ -110,4 +115,95 @@ data_frame(theta = seq(.01,.99,by=.01),
        subtitle = "Relative frequency with which each value of theta generated a sample of 2 heads in 5 flips",
        x = "Theta (prob. of heads)",
        y = "Empirical Log Likelihood")
+```
+
+
+## Normal($\mu,1$)
+
+Next let's look at an example where the underlying distribution is continuous. In the previous case (and in all cases we will consider) the likelihood is a continuous function on the interior of the parameter space, because it is a function of the *parameter*, not the *data*. The only change to our example will be to slightly modify our simulation to account for the fact that the sufficient statistic is continuous and so takes on any actual value with probability zero. The math remains essentially the same.
+
+If $X_{i} \overset{IID}{\sim} N(\mu,1)$ is a random sample from a normal distribution with mean $\mu$ and variance $1$, the log-likelihood function (with constants not depending on $\mu$ removed) is
+\[
+\ell(\mu) = -\frac{1}{2}\sum_{i=1}^{n}\left(x_{i} - \mu\right)^{2}
+\]
+Let's do as we did before: take a random sample of size $n = 5$ and plot the log-likelihood:
+```{r norm-1}
+set.seed(4632789)
+n <- 5
+mutrue <- 0
+samp <- rnorm(5,mutrue,1)
+cat("Actual generated sample: ",samp,"\n")
+
+# Plot the log-likelihood
+normal_ll <- function(mu,x) {
+  -(1/2)*sum((x - mu)^2)
+}
+
+normal_ll_v <- function(mu,x) {
+  out <- numeric(length(mu))
+  for (i in 1:length(mu)) {
+    out[i] <- normal_ll(mu[i],x)
+  }
+  out
+}
+
+data_frame(mu = seq(-3,3,by=.01),
+           ll = normal_ll_v(mu,x = samp)) %>%
+  ggplot(aes(x = mu,y = ll,group = 1)) +
+  theme_classic() +
+  geom_line() +
+  geom_vline(xintercept = mean(samp),colour = "purple") +
+  geom_vline(xintercept = mutrue,colour = "red") +
+  scale_x_continuous(breaks = seq(-3,3,by=.5)) +
+  scale_y_continuous(breaks = seq(0,-40,by=-5)) +
+  labs(title = "Normal Log-Likelihood for 5 Simulated Datapoints",
+       subtitle = "Red line = true mean, purple line = maximum likelihood estimate",
+       x = "Mu (mean of X)",
+       y = "Log Likelihood")
+```
+
+Likelihood has the same interpretation here: the relative frequency with which each value of $\mu$ would have generated the observed data, or more simply, data with the observed value of a sufficient statistic. For the normal distribution, we can unpack the form of the likelihood to find that $T(X) = \sum_{i=1}^{n}X_{i}$ is sufficient for $\mu$. As with the bernoulli case, we can simulate to investigate, for each value of $\mu$ we try, the relative frequency with which we get $\sum_{i=1}^{x}_{i} = $ `r round(sum(samp),2)` in a random sample of size 5 from a normal distribution with mean equal to each value of $\mu$. We have to modify this slightly to account for that fact that we won't get simulated $\sum_{i=1}^{n}x_{i}$ values of *exactly* what we observed, because the underlying data is continuous- we'll look at a small neighbourhood around the observed value instead.
+
+```{r norm-2}
+simulate_norm <- function(mu,n=5,sumx=round(sum(samp),2),eps=0.01) {
+  # Simulate a bunch of experiments with n samples from a normal(mu,1) distribution
+  # Return the log of the relative frequency with which the sum of the sample is within eps distance of sumx
+  B <- 100000 # Number of simulations to do
+  experiment_within_eps_distance <- numeric(B) # Record whether the experiment has two heads
+  for (b in 1:B) {
+    experiment_within_eps_distance[b] <- as.numeric(abs(sum(rnorm(n,mu,1)) - sumx) < eps)
+  }
+  
+  log(mean(experiment_within_eps_distance))
+}
+
+simulate_norm(-.59)
+```
+
+We perform this for various values of $\mu$ and plot the log-likelihood:
+
+```{r norm-3,cache=TRUE}
+simulate_norm_v <- function(mu,n=5,sumx=round(sum(samp),2),eps=0.01) {
+  out <- numeric(length(mu))
+  for (i in 1:length(mu)) {
+    #cat("Simulating for mu = ",mu[i],"\n")
+    out[i] <- simulate_norm(mu[i],n,sumx,eps)
+  }
+  out
+}
+
+data_frame(mu = seq(-3,3,by=.05),
+           ll = simulate_norm_v(mu)) %>%
+  ggplot(aes(x = mu,y = ll,group = 1)) +
+  theme_classic() +
+  geom_line() +
+  geom_vline(xintercept = mean(samp),colour = "purple") +
+  geom_vline(xintercept = mutrue,colour = "red") +
+  scale_x_continuous(breaks = seq(-3,3,by=.5)) +
+  scale_y_continuous(breaks = seq(-10,-40,by=-2)) +
+  labs(title = "Normal Empirical Log-Likelihood for 5 Simulated Datapoints",
+       subtitle = "Red line = true mean, purple line = maximum likelihood estimate",
+       x = "Mu (mean of X)",
+       y = "Log Likelihood")
+
 ```
