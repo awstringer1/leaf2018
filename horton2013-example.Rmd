@@ -1,0 +1,87 @@
+---
+title: "Integrating Computation Into Statistics Courses: Worked Example"
+subtitle: "Description of Question and Analytical Solution "
+author: "Alex Stringer"
+date: '`r Sys.Date()`'
+output: 
+  html_document:
+    toc: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup-noshow, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r setup-show,include=FALSE}
+# Load the tidyverse packages
+suppressMessages({
+  suppressWarnings({
+    library(tidyverse)
+  })
+})
+```
+
+## The Example
+
+The example is Example 3.1 from page 4 (222) of Horton (2013): I Hear, I Forget. I Do, I Understand: A Modified Moor-Method Mathematical Statistics Course. *The American Statistician* 67:4 219-228. 
+
+Suppose a disease is present in any randomly selected member of a population with probability $P(\mbox{disease}) = p$, and that this can be discovered by a blood test with perfect accuracy, $P(\mbox{disease } | \mbox{ test is positive}) = 1$, $P(\mbox{disease } | \mbox{ test is negative}) = 0$. $N$ people are to be tested, however the test is expensive, so we wish to reduce the number of tests performed from the $N$ tests that would be required to test everybody.
+
+To this end, these $N$ individuals are to be split into $n$ groups of size $k$ people each, $N = nk$ with $N, n, k \in \mathbb{N}$. Each pool is then tested. If the test is negative, then all the $k$ people in that group are healthy. If the test is positive, then the $k$ people must be tested individually (assuming all tests are done simulataneously), for a total of $k+1$ tests.
+
+The question is then:
+
+- For fixed $N$, what is the expected number of tests that will be performed, as a function of $k$?
+- Find the value of $k$ to minimize the expected number of tests performed
+
+While this question can be solved analytically with introductory probability at the level of STA257, first evaluating this experiment empirically will enhance students' understanding of the question while teaching them valuable programming and problem-solving skills.
+
+## Analytical Solution
+
+This is an example of the type of solution that students currently might be asked to produce on assignments, or that might be done in lecture on the blackboard.
+
+Let $Y_{i}$ be the binary indicator of whether *any* of the $k$ members of group $i$ have the disease, $i = 1 \ldots n$. Then each $Y_{i}$ is $Bernoulli(\theta)$, with
+$$
+\theta = P(Y_{i} = 1) = 1 - (1-p)^{k}
+$$
+This is obtained by noting that the probability that each individual has the disease is $p$, so the probability they don't have it is $(1-p)$. There are $k$ statistically independent people in each group, and the event $Y_{i} = 0$ is equivalent to none of these $k$ individuals having the disease. Hence
+$$
+P(Y_{i} = 0) = (1-p)^{k} \equiv 1 - \theta
+$$
+
+Students who have taken (or are taking) an introductory course in probability should have the background necessary to approach this question.
+
+Now the expected value of $Y_{i}$ is $E(Y_{i}) = \theta$. Let $T_{i}$ be the number of tests performed on group $i$. Since $T_{i} = 1$ if $Y_{i} = 0$ and $T_{i} = k+1$ if $Y_{i} = 1$,
+$$
+T_{i} = 1 + kY_{i}
+$$
+Which gives
+$$
+E(T_{i}) = 1 + k\theta
+$$
+The expected number of tests overall is therefore
+$$
+E\left( \sum_{i=1}^{n} T_{i} \right) = n + nk(1 - (1-p)^{k})
+$$
+recalling that $\theta = 1 - (1-p)^{k}$
+
+For obtaining the value of $k$ at which $E\left( \sum_{i=1}^{n} T_{i} \right) = n + nk(1 - (1-p)^{k})$ is minimized, we note that the function is convex in $k$ for $k > 0$ and take a derivative:
+$$
+\frac{d}{dk}E\left( \sum_{i=1}^{n} T_{i} \right) = N\times\left( \log{\left( \frac{1}{1-p} \right)}\times (1-p)^{k} - \frac{1}{k^{2}}\right)
+$$
+We can't solve this for zero analytically anyways; this is an example of where it is advantageous to be doing this question in a computational environment. Solving this for zero is a good opportunity to introduce students to basic numerical techniques in `R`. To find the roots of a univariate function on a bounded interval, `R` provides the `uniroot` function:
+```{r uniroot-1}
+fprime <- function(k,N=5000,p=0.05) N * (log(1/(1-p))*(1-p)^k - 1/k^2)
+uniroot(fprime,c(1,10))
+```
+We can also forget the derivative entirely and introduce `R`'s flexible environment for nonlinear (box-)constrained optimization, provided by the `nlm` function
+```{r nlminb-1}
+expected_tests <- function(k,N=5000,p=0.05) {
+  n <- N / k
+  n + n*k*(1 - (1-p)^k)
+}
+nlminb(start = 1,objective = expected_tests,lower = 1)
+```
+
+We see that $k = 5$ is the approximate minimum.

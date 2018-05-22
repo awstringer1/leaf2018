@@ -1,0 +1,44 @@
+---
+title: "Integrating Computation Into Statistics Courses: Worked Example"
+subtitle: "Introduction: Description of Document and Learning Outcomes"
+author: "Alex Stringer"
+date: '`r Sys.Date()`'
+output: 
+  html_document:
+    toc: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup-noshow, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r setup-show,include=FALSE}
+# Load the tidyverse packages
+suppressMessages({
+  suppressWarnings({
+    library(tidyverse)
+  })
+})
+```
+
+
+## Description of Document
+
+This document is meant to offer guidance to instructors wishing to augment their statistics courses with computational elements, by way of an extended example due to Horton (2013): I Hear, I Forget. I Do, I Understand: A Modified Moor-Method Mathematical Statistics Course. *The American Statistician* 67:4 219-228. This document describes in detail the challenges students may face when implementing a basic simulation of a non-trivial experiment, and the potential benefits in understanding that accompany working through these challenges. Also described is the analytical solution to the same problem, and how computation can be used by students to check their work and develop confidence in their solutions. 
+
+The example here is presented in two parts. A "basic" part uses mostly base `R` functionality, and is suitable for instructors who want to use computation alongside analytical problem solving in their course. This may be most useful for introductory courses like STA220/221/257/261, and for upper-year theory-based courses, where computation can be used to aid student understanding and engagement, but isn't part of the main learning objectives. The basic simulation code is extended throughout with an "advanced" part, which improves the base `R` code using modern packages and techniques. This may be more suitable for more applied courses such as STA302/303/314/414, where part of the learning objectives of the course are to have students learn to compute with data.
+
+## Learning Objectives
+
+This exercise introduces a medium-difficulty introductory probability problem, translates it into an algorithm, implements this algorithm in `R`, uses the result in simulations  solves the original problem analytically, and critically evaluates the solution by comparing the analytical and empirical versions. As such, it aims to cover many learning outcomes. Below is a perspective on this, categorized by the relevant Statistics Undergraduate Program Learning Outomes:
+
+  - **Theory**
+    - *Probability as a mathematical framework for uncertainty*: the problem itself is in reducing the number of blood tests performed by pooling samples; the resulting number of tests is uncertain, and we evaluate the *expected* number of tests performed under various pooling schemes by performing probability calculations
+  - **Methods**
+    - *Data visualization*: even though no "real data" is used in this problem, we generate data as part of the simulations to better our understanding of the behaviour of the relevant experiment under various conditions. Rather than just looking at the raw numbers, we use visualization to better communicate the relationship between the size of the pool and the expected number of tests
+  - **Computational Thinking**
+    - *Simulation to evaluate methods, support theory*: the question as stated can be (and is) solved analytically with a little bit of work. It's not completely trivial, though, and we use simulations to both gain an idea of what analytical results we can expect, and to verify that we have understood the question correctly and thoroughly, enough that we can type it into a computer
+    - *Data manipulation*: both in the simulations and when making the plots, we are required to structure the data efficitvely for analysis, and make the point that the manner in which the data is structured has a tangible effect on the scope of its use. This is made more clear in the "advanced" simulation, where just by structuring the data appropriately and using modern software, we are able to complete the entire simulation in 7 lines of code.
+    - *Programming skills*: both the "basic" and "advanced" parts of the empirical solution introduce programming skills to students. The former is intended for students who have minimal `R` experience, and where the learning outcome is less on coding skills themselves and more on properly utilizing statistical computation as a means for approaching theoretical problems. The latter is intended for students who have introductory `R` experience, and for cases where the learning objective actually focusses on good programming practice.
+    - *Computing/Reproducibility*: the entire example is contained within a `.Rmd` file that can be executed in its entirety to reproduce the analysis, as is modern best practice

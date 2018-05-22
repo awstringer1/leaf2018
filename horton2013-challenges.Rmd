@@ -1,0 +1,169 @@
+---
+title: "Integrating Computation Into Statistics Courses: Worked Example"
+subtitle: "Discussion of Possible Student Challenges"
+author: "Alex Stringer"
+date: '`r Sys.Date()`'
+output: 
+  html_document:
+    toc: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup-noshow, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r setup-show,include=FALSE}
+# Load the tidyverse packages
+suppressMessages({
+  suppressWarnings({
+    library(tidyverse)
+  })
+})
+```
+
+
+Let us look at the details of simulating this experiment. The goal is to write a function `simulate_one_experiment(k,N,p)` that will take a value of $k$ (again, for fixed $N$ and $p$), peform the above experiment, and return the number of tests performed.
+
+To do this requires the problem to be broken down into an algorithm, that is, a clear set of sequential instructions. "Clear" here means "executable by a computer". Even if not actually coding up the result, this is a valuable step in solving any problem, one that students will benefit from doing. Students can be asked to produce something like the following as a first exercise:
+
+**Algorithm: Perform One Experiment**
+
+1. Fix $N \in \mathbb{N}$, $0 < p < 1$
+1. Input $k \in \mathbb{N}$ such that $n = N / k \in \mathbb{N}$
+1. Generate a population of simulated disease states: a vector of $N$ independent Bernoulli($p$) draws
+1. Divide these into $n$ groups of size $k$
+1. For each group, assign an indicator variable taking value $0$ if none of the $k$ Bernoulli draws in the group equal $1$, and $1$ if any of the draws equal $1$
+1. Sum up the number of tests performed across groups- $1$ test if the above indicator is zero, and $k+1$ tests if it equals 1
+1. Return the number of tests performed
+
+Though the statement of the problem is understandable to the general public and the probability calculations required are at the level of a student in a second-year introductory probability course, it is expected that most students would have trouble coming up with the above list of steps, as it requires thinking in a level of detail that is not always emphasized in problems like these. Let's look at each part of the above algorithm in more detail:
+
+1. *Fix $N \in \mathbb{N}$, $0 < p < 1$*
+1. Input $k \in \mathbb{N}$ such that $n = N / k \in \mathbb{N}$
+1. *Generate a population: a vector of $N$ independent Bernoulli($p$) draws*
+
+This is an opportunity to introduce students to the simulation API in `R`: the `rdist` functions like
+`rbinom`, `rnorm`, etc. There isn't much to say about these functions themselves, but for introductory `R` programmers, they are useful to introduce basic data structures and control flow. Students can first do the simulation the "low-level" way, by setting an empty vector of the desired length and writing a simple loop:
+```{r sim-1,echo=TRUE,eval=FALSE}
+N <- 10
+p <- 0.05
+popsim <- numeric(N)
+for (i in 1:N) {
+  popsim[i] <- rbinom(n = 1,size = 1,prob = p)
+}
+print(popsim)
+```
+which in 6 lines of code gives a basic introduction to data structures, variables, `R`'s loop syntax, printing data, and of course the `rbinom` function. 
+
+They can then learn about *vectorized* functions, replacing the whole above procedure with
+```{r sim-2,echo=TRUE,eval=FALSE}
+popsim <- rbinom(n = N,size = 1,prob = p)
+```
+Regardless of how it is obtained, now the students have a vector of $0$'s and $1$s represented simulated disease states from our population of interest. Instructors interested in the "basic" simulation may now move to the next step.
+
+Instructors interested in the "advanced" simulation can now ask students: is this the best way to store these data? Thinking ahead, the next step in our algorithm is going to be to somehow group these simulated datapoints together. How would we do that given the current way these data are stored?
+
+The key concept to introduce to students here is that the manner in which the data is structured affects the scope of the analysis. In a standalone vector, we can't easily add a new piece of information (the group number) to each datapoint. We need to extend the *dimension* of each datapoint to include this new piece of information. 
+We can do this by storing the data in a *data frame*. This concept can be introduced to the students, and then the construction can be shown:
+```{r dataframe-1,echo = TRUE,eval=FALSE}
+popdataframe <- data_frame(disease = popsim)
+
+```
+That one line of code contains several elements that can be unpacked and discussed with students:
+
+- The `data_frame` command from the `dplyr` package is used to create a data frame, a structure that holds one or more *columns* of data of various types (numeric, categorical, date, etc). Values in the same *row* are typically referred to as *data points* and are understood to be related to each other (this will be clear at the next step)
+- The syntax for creating a `data_frame` is `data_frame(column1 = values1, column2 = values2, ...)`, where `column1` is the name of a column and `values1` is a vector of values to put in that column
+
+The result of the above command can be printed and viewed by the students:
+```{r dataframe-2,eval=FALSE}
+print(popdataframe)
+```
+4. *Divide these into $n$ groups of size $k$*
+
+Because the data were generated randomly, the grouping can be deterministic. Students can create another vector, with each element representing the group membership of the corresponding observation in `popsim`:
+
+```{r group-1,eval=FALSE}
+groups <- rep(1:n,k)
+```
+Again, one line of code, but its construction requires students to understand what they are doing: there are $n = N / k$ groups, each with $k$ members, so we create a vector containing the numbers from $1$ to $n$, $k$ times each.
+
+Instructors following the discussion of the "advanced" simulation can put to students the question of how to add a column to the dataframe that gives the group index of each individual:
+```{r dataframe-3,eval=FALSE}
+popdataframe <- popdataframe %>%
+  mutate(group = rep(1:n,k))
+```
+
+This step introduces three new operations:
+
+- The `%>%` operator takes whatever is on the left of it and "pipes" it into whatever is on the right. It has been my experience that if too big a deal is made out of this, students get hung up on it: it's really not that complicated, and if you just start using it with minimal explanation, the resulting code is simple enough to follow (in fact, readability is the main argument for using `%>%` in the first place)
+- the `mutate` function takes a dataframe and adds new columns, which can be (but don't have to be) functions of existing columns. The syntax is the same as the `data_frame` creation function
+- the `rep` command repeats its first argument the number of times indicated by its second argument. The `1:k` syntax is short for `seq(1,k,1)`, and creates a sequence of integers from `1` to `k`
+
+Now we have a dataframe containing the `N` members of the population and their group memberships. Students can also be asked to modify this step so that it happens at the same time as the previous step (this is what is shown in the final simulation function in the previous section):
+```{r dataframe-4,eval=FALSE}
+popdataframe <- data_frame(disease = popsim,group = rep(1:n,k))
+popdataframe
+```
+5. *For each group, assign an indicator variable taking value $0$ if none of the $k$ Bernoulli draws in the group equal $1$, and $1$ if any of the draws equal $1$*
+
+We wish to check, for each group, whether there are any `disease == 1` observations. This can be accomplished using a loop:
+```{r summarize-1,eval=FALSE}
+  any_diseased <- numeric(n)
+  for (i in 1:N) {
+    if (popsim[i] == 1) {
+      any_diseased[groups[i]] <- 1
+    }
+  }
+```
+Students can be guided to come up with something like the above. This has the advantage of being prescriptive; essentially they
+
+- Create an external (to the dataframe) numeric vector of length equal to the number of groups, containing all zeroes to begin with
+- Loop over the rows of the dataframe containing the disease states and groups, checking if each observation has a disease state equalling `1`
+- If it does, the group to which it belongs is set to `1` in the group disease indicator vector
+
+This is another example where being forced to implement a simulation in turn forces students to understand what they are doing. Instructors following the "basic" simulation may move to the next step.
+
+This approach has several areas for improvement:
+
+- Now that the data is collected in a dataframe, the cleanest form of analysis keeps all quantities calculated from these data in the same dataframe; nothing is done *externally* to the dataframe. This is a key concept in tidy data analysis
+- The result is not properly structured: a numeric vector of zeroes and ones, where the *position* of a `1` indicates which group has a diseased observation. Keeping *data* in the *metadata* of a data structure is confusing and can lead to errors.
+
+This computation is an example of a very common computation in data anlaysis, the *group by/summarize* or *split/apply/combine* pipeline. We want to `group` the dataframe by one variable present in it (in this case, that variable is named `group`), and then apply a `summary` operation separately to each group. Specifically, we want to take the `max(disease)` for each group, and have the result be a new dataframe with one column representing the group and another column representing a binary indicator of whether the group has any dieased observations or not. We can use a proper groupby/summarize workflow using functions from the `dplyr` package in order to do these computations without leaving the dataframe:
+```{r summarize-2,eval=FALSE}
+any_diseased <- popdataframe %>%
+  group_by(group) %>%
+  summarize(disease = max(disease))
+print(any_diseased)
+```
+6. *Sum up the number of tests performed across groups- $1$ test if the above indicator is zero, and $k+1$ tests if it equals 1*
+
+Students can now use another loop over the `any_diseased` indicators to count the number of tests performed, according to the description of the problem:
+```{r count-1,eval=FALSE}
+# Count the number of tests performed
+numtests <- 0
+for (i in 1:n) {
+  if (any_diseased[i] == 1) {
+    numtests <- numtests + (k + 1)
+  }
+  else {
+    numtests <- numtests + 1
+  }
+}
+numtests
+```
+This again has the advantage of being prescriptive, in the sense that students are taking their psuedocode from the beginning and translating it directly into computer code, reinforcing their depth of understanding of the procedure they are trying to implement.
+
+We can modify this for the "advanced" approach by working inside the properly structured dataframe students have created. Having the group and the diseased state next to each other now allows us to again remain inside the dataframe when we do the next step: adding up the number of tests performed.
+```{r summarize-3,eval=FALSE}
+any_diseased %>%
+  mutate(numtests = disease * k + 1) %>%
+  summarize(numtests = sum(numtests)) %>%
+  pull(numtests)
+```
+
+The result of the first three lines is a one-element (one row, one column) dataframe containing the number of tests performed. The final `pull` command extracts this value and returns it as a scalar, which is the desired output of one run of our function.
+
+7. *Return the number of tests performed*
+
+At this point, students have translated their algorithmic description of the exercise into computer code. The last step is to put the result into a function that can be called repeatedly, as shown in the previous sections. Instructors should decide how much detail to go in to; students can achieve this having only learned the basic syntax for function creation.

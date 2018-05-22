@@ -31,6 +31,18 @@ The example here is presented in two parts. A "basic" part uses mostly base `R` 
 
 ## Learning Objectives
 
+This exercise introduces a medium-difficulty introductory probability problem, translates it into an algorithm, implements this algorithm in `R`, uses the result in simulations  solves the original problem analytically, and critically evaluates the solution by comparing the analytical and empirical versions. As such, it aims to cover many learning outcomes. Below is a perspective on this, categorized by the relevant Statistics Undergraduate Program Learning Outomes:
+
+  - **Theory**
+    - *Probability as a mathematical framework for uncertainty*: the problem itself is in reducing the number of blood tests performed by pooling samples; the resulting number of tests is uncertain, and we evaluate the *expected* number of tests performed under various pooling schemes by performing probability calculations
+  - **Methods**
+    - *Data visualization*: even though no "real data" is used in this problem, we generate data as part of the simulations to better our understanding of the behaviour of the relevant experiment under various conditions. Rather than just looking at the raw numbers, we use visualization to better communicate the relationship between the size of the pool and the expected number of tests
+  - **Computational Thinking**
+    - *Simulation to evaluate methods, support theory*: the question as stated can be (and is) solved analytically with a little bit of work. It's not completely trivial, though, and we use simulations to both gain an idea of what analytical results we can expect, and to verify that we have understood the question correctly and thoroughly, enough that we can type it into a computer
+    - *Data manipulation*: both in the simulations and when making the plots, we are required to structure the data efficitvely for analysis, and make the point that the manner in which the data is structured has a tangible effect on the scope of its use. This is made more clear in the "advanced" simulation, where just by structuring the data appropriately and using modern software, we are able to complete the entire simulation in 7 lines of code.
+    - *Programming skills*: both the "basic" and "advanced" parts of the empirical solution introduce programming skills to students. The former is intended for students who have minimal `R` experience, and where the learning outcome is less on coding skills themselves and more on properly utilizing statistical computation as a means for approaching theoretical problems. The latter is intended for students who have introductory `R` experience, and for cases where the learning objective actually focusses on good programming practice.
+    - *Computing/Reproducibility*: the entire example is contained within a `.Rmd` file that can be executed in its entirety to reproduce the analysis, as is modern best practice
+
 # The Example
 
 The example is Example 3.1 from page 4 (222) of the above referenced paper. Suppose a disease is present in any randomly selected member of a population with probability $P(\mbox{disease}) = p$, and that this can be discovered by a blood test with perfect accuracy, $P(\mbox{disease } | \mbox{ test is positive}) = 1$, $P(\mbox{disease } | \mbox{ test is negative}) = 0$. $N$ people are to be tested, however the test is expensive, so we wish to reduce the number of tests performed from the $N$ tests that would be required to test everybody.

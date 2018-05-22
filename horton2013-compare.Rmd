@@ -1,0 +1,131 @@
+---
+title: "Integrating Computation Into Statistics Courses: Worked Example"
+subtitle: "Comparison of Analytical Solution and Emprical Results"
+author: "Alex Stringer"
+date: '`r Sys.Date()`'
+output: 
+  html_document:
+    toc: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup-noshow, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r setup-show,include=FALSE}
+# Load the tidyverse packages
+suppressMessages({
+  suppressWarnings({
+    library(tidyverse)
+  })
+})
+```
+```{r simulation-basic-1,include=FALSE}
+
+# Function to perform one experiment
+perform_one_experiment_basic <- function(k,N=5000,p=0.05) {
+  n <- N / k
+  
+  # Simulate the population
+  popsim <- numeric(N)
+  for (i in 1:N) {
+    popsim[i] <- rbinom(n = 1,size = 1,prob = p)
+  }
+  
+  # Group them
+  groups <- rep(1:n,k)
+  
+  # Check the disease status of each group
+  any_diseased <- numeric(n)
+  for (i in 1:N) {
+    if (popsim[i] == 1) {
+      any_diseased[groups[i]] <- 1
+    }
+  }
+  
+  # Count the number of tests performed
+  numtests <- 0
+  for (i in 1:n) {
+    if (any_diseased[i] == 1) {
+      numtests <- numtests + (k + 1)
+    }
+    else {
+      numtests <- numtests + 1
+    }
+  }
+  numtests
+}
+
+perform_B_experiments_basic <- function(B,k,N=5000,p=0.05) {
+  results <- numeric(B)
+  for (i in 1:B) {
+    results[i] <- perform_one_experiment_basic(k,N,p)
+  }
+  mean(results)
+}
+
+
+
+```
+
+This is not the most complicated probability question ever asked, but it is not trivial, and a good proportion of the class may struggle to get the answer. One major benefit of having coded up the empirical solution first is the added understanding and clarity about the problem that the students get from doing this. Another advantage is that now we have a way to check whether our analytical answer is reasonable:
+
+```{r analytical-1}
+expected_tests <- function(k,N=5000,p=0.05) {
+  n <- N / k
+  n + n*k*(1 - (1-p)^k)
+}
+
+expected_tests(5)
+perform_B_experiments_basic(25,5)
+
+```
+Of course these numbers won't be the same, but they are close, and this means that either we didn't make any mistakes, or at least we made the same mistakes in both our analytical and empirical investigation. Either way, the ability to check one's answer gives students a sense of confidence. Students can get even more confidence by creating a plot for a range of values of $k$:
+```{r compare-plot-1}
+k_to_do <- c(1,2,5,8,10)
+analytical <- numeric()
+empirical <- numeric()
+for (i in 1:length(k_to_do)) {
+  k <- k_to_do[i]
+  analytical[i] <- expected_tests(k)
+  empirical[i] <- perform_B_experiments_basic(25,k)
+}
+
+data_frame(k = k_to_do,
+           analytical = analytical,
+           empirical = empirical) %>%
+  gather(type,value,analytical:empirical) %>%
+  ggplot(aes(x = k,y = value,group = type,colour = type)) +
+  theme_classic() +
+  geom_line() +
+  scale_x_continuous(breaks = k_to_do) +
+  scale_y_continuous(labels = scales::comma_format()) +
+  scale_color_brewer(palette = "Spectral") +
+  labs(title = "Comparison of Analytical and Empirical Expected Number of Tests",
+       subtitle = "Blood Pooling Problem",
+       x = "k, Number of People in Group",
+       y = "Expected Number of Tests",
+       colour = "Type of Calculation")
+```
+
+This gives confidence in our answers: the simulated and analytical results are nearly identical across the range of $k$ values that we elected to be interested in.
+
+The correctness of the derivative calculation can be checked by plotting it and comparing the location of the zero with the local optimum at $k = 5$, and the sign with the slopes of the original function for $k < 5$ and $k > 5$. This shows students how to plot a curve using ggplot: just create a dataframe with the x and y values, and proceed as normal. Some playing around helps to determine the appropriate x-values to use.
+```{r plot-fprime}
+fprime <- function(k,N=5000,p=0.05) N * (log(1/(1-p))*(1-p)^k - 1/k^2)
+data_frame(k = seq(4.5,10,by=0.01),
+           y = fprime(k)) %>%
+  ggplot(aes(x = k,y = y),group = 1) +
+  theme_classic() +
+  geom_line() +
+  geom_hline(yintercept = 0,colour = "red") +
+  geom_vline(xintercept = 5,colour = "purple") +
+  labs(title = "Derivative of Expected Number of Tests with Respect to Group Size",
+       subtitle = "Blood Pooling Example",
+       x = "Group Size (k)",
+       y = "Derivative of Expected Number of Tests") +
+  scale_x_continuous(breaks = 4:10)
+
+```
+

@@ -1,0 +1,40 @@
+---
+title: "Integrating Computation Into Statistics Courses: Worked Example"
+subtitle: "Suggestions on Implementation"
+author: "Alex Stringer"
+date: '`r Sys.Date()`'
+output: 
+  html_document:
+    toc: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup-noshow, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r setup-show,include=FALSE}
+# Load the tidyverse packages
+suppressMessages({
+  suppressWarnings({
+    library(tidyverse)
+  })
+})
+```
+
+
+How might an instructor implement this into a traditional lecture-based course? Without the computational component, the question as asked in an introductory probability course might be solved on the blackboard in lecture, solved with a TA during tutorial, or assigned for individual homework. Here we offer suggestions on how to integrate the computational aspect into each of these methods of delivery:
+
+1) *Solved on blackboard during lecture*: the instructor may prepare the simulation beforehand and project RStudio onto the screen, while solving the question on the blackboard. It can be helpful for students to first outline an algorithm for simulating the experiment; as described above, this clarifies understanding of the problem and all relevant variables. Each stage in the analytical solution can be referenced in the algorthmic description of the problem. For example, the first step in the analytical solution is to define a random variable representing the indicator of a group having any positive tests. This seems innocuous, but that already takes us through steps 1 - 5 of the algorithm, which has only 7 steps total! Once this is achieved, we claim that the random variable $Y_{i}$ as defined is $Bernoulli(\theta)$ with $\theta = 1 - (1-p)^{k}$- the simulation can be modified to verify this, and the instructor can solicit questions/comments from the students about how to do this.
+1) *Solved with a TA during tutorial*: if the course has tutorials, the TAs can be provided the example beforehand. The above procedure can be repeated in this smaller environment, but could be modified by having students bring their laptops to tutorial (or have the tutorial in a computer lab), and the TA assist/coach the students into developing the simulation interactively, much in the same way students might be coached in solving the analytical portion of the problem in such an environment. As well, tutorials are usually small enough that it may be feasible to split students into groups, and have each group focus on finding a solution.
+1) *Assigned as individual homework*: in this case, students can be asked to create the simulation themselves. The degree to which such a creation is self-directed by the student as opposed to guided by the instructor is dependent on how familiar the students are with this type of exercise. If this is the first time students have been asked to simulate something in the course (and there is no reasonable expectation of prior experience in this area) then the instructor may wish to provide example code, or even a complete implementation that the students run under various scenarios. If several such exercises have been presented in lecture or tutorial, then the question can be asked in a more open-ended format.
+
+For example, an open-ended question might ask:
+
+> For the experiment described above, implement a function in `R` that performs one simulation of this experiment. Run your function several times and average the results for each of $k = 1,2,5,8,10$, and create a `ggplot` line graph of the results. Add a line to this graph with your analytical solution for each value of $k$, and comment on any differences. Is the value of $k$ that minimizes the expected number of tests the same for the analytical vs simulated solutions?
+
+A more guided version of the question might provide a function that repeats the experiment many times and averages the results, for an input value of $k$. A question here might ask:
+
+> Use the provided `R` function to simulate this experiment multiple times and average the results for each of $k = 1,2,5,8,10$. Compare the results of the simulation to your analytical calculations. Are they close? Is the value of $k$ that minimizes the expected number of tests the same for the analytical vs simulated solutions?
+
+Both manners of evaluation allow students to approach the problem from both an analytical and empirical standpoint, and can help students develop confidence in their answers by completing the question in multiple ways (and seeing that the answers agree). The second method, where the instructor provides the simulation code, loses depth of student engagement in the empirical solution to the problem, but has a lower risk of shifting the focus onto irrelevant computational aspects. The decision of how to do this is highly course- and instructor-dependent.

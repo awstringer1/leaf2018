@@ -6,19 +6,50 @@ This site hosts materials created by Alex Stringer in support of the LEAF projec
 ## Instructor Tutorials
 Tutorials for instructors wishing to integrate computation into their courses.
 
-[Worked example from Horton (2013): probability problem with empirical and analytical solution, and discussion](http://awstringer1.github.io/leaf2018/horton2013-example3-1.html)
+Worked example from Horton (2013): probability problem with empirical and analytical solution, and discussion
+
+  - [Introduction: description of documents and learning objectives](http://awstringer1.github.io/leaf2018/horton2013-introduction.html)
+  - [Description of the example studied and analytical solution](http://awstringer1.github.io/leaf2018/horton2013-example.html)
+  - [Empirical investigation and solution](http://awstringer1.github.io/leaf2018/horton2013-empirical.html)
+  - [Comparison of anlaytical and empirical results](http://awstringer1.github.io/leaf2018/horton2013-comparison.html)
+  - [Discussion of potential student challenges in implementing the simulations](http://awstringer1.github.io/leaf2018/horton2013-challenges.html)
+  - [Recommendations on implementing similar examples in statistics courses](http://awstringer1.github.io/leaf2018/horton2013-implementation.html)
+  - [Example assessments](http://awstringer1.github.io/leaf2018/horton2013-.html)
 
 ## Examples of Student-Facing Materials
-Examples of materials that can be worked on with students as part of a course.
+Examples of materials that can be worked on with students as part of a course. Each item has an example of a course in which it could be used, with **bold** indicating a course in which it *has* been used. Also included are example Intended Learning Outcomes that the material might relate to. These are aligned with the Statistics Undergraduate Program Learning Outcomes.
 
 ### Lecture Supplements
 Materials that can be used during lecture as a supplement to traditional slides and blackboard writing.
 
-(STA261): [Normal Approximation to Binomial](http://awstringer1.github.io/leaf2018/lecture-1-normal-approx-binomial.html)
+[Normal Approximation to Binomial](http://awstringer1.github.io/leaf2018/lecture-1-normal-approx-binomial.html)
+    
+  - Example courses: **STA261**, STA255, STA220
+  - Description: simulate from the binomial distribution and plot the results; compare normal density curve; compute approximate binomial probabilities using the normal distribution
+  - Intended Learning Outcomes:
+    - Create simulations in `R` to investigate theoretical results (**Computational Thinking**)
+    - Plot univariate data using `ggplot` (**Methods**); interpret plots in the context of a problem and decide on further analysis (**Real World Problems**)
 
-(STA261): [Fitting a Gamma distribution to rainfall data](http://awstringer1.github.io/leaf2018/sta261-lecture2-method-of-moments-gamma.html)
+[Fitting a Gamma distribution to rainfall data](http://awstringer1.github.io/leaf2018/sta261-lecture2-method-of-moments-gamma.html)
 
-(STA261): [Simulating Likelihood Functions](http://awstringer1.github.io/leaf2018/sta261-lecture4-simulating-likelihood.html)
+  - Example Courses: **STA261**, STA255
+  - Description: illustration of the application of the Method of Moments to data; plot a histogram of rainfall data, guess the family of distributions based on shape; estimate their parameters using the Method of Moments and plot the resulting curve; qualitatively evaluate the fit 
+  - Intended Learning Outcomes:
+    - Read several datasets into `R`, merge them, and evaluate the integrity of the resulting data (**Computational Thinking**)
+    - Plot univariate data using `ggplot` (**Methods**); interpret plots in the context of a problem and decide on further analysis (**Real World Problems**)
+    - Choose a family of distributions based on a plot and estimate the parameters of this distribution (**Methods**); critique the quality of the fitted model qualitatively through intepreting visualizations (**Real World Problems**)
+
+[Simulating Likelihood Functions](http://awstringer1.github.io/leaf2018/sta261-lecture4-simulating-likelihood.html)
+
+  - Example courses: **STA261**, STA255, STA355
+  - Description: plot likelihood function for a single sample; translate the mathematical definition of the likelihood function into a simulation; run this simulation and plot the resulting empirical likelihood function, comparing shape
+  - Intended Learning Outcomes:
+    - Plot likelihood functions for single random samples (**Methods**)
+    - Simulate many datasets from distributions with particular parameter values, and link this to the concept of likelihood by plotting the results (**Methods**)
+    
+    
+    
+    
 ### Learnr Tutorials
 Hosted tutorials on course concepts writtedn using the **learnr** package in R.
 
