@@ -1,0 +1,113 @@
+---
+title: "STA261 Summer 2018 Lecture 4:" 
+subtitle: "Likelihood Functions"
+author: "Alex Stringer"
+date: '`r Sys.Date()`'
+output: 
+  html_document:
+    toc: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup-noshow, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r setup-show,include=TRUE}
+# Load the tidyverse packages
+suppressMessages({
+  suppressWarnings({
+    library(tidyverse)
+  })
+})
+```
+
+Recall in lecture how we defined the *likelihood* function: for a random vector $X = (X_{1},\ldots,X_{n})$ whose joint distribution depends on parameter $\theta = (\theta_{1},\ldots,\theta_{p})$, the likelihood function is the joint density/mass function of $X$ treated as a function of $\theta$ for fixed $X$:
+\[
+L(\theta | X) = f(x ; \theta)
+\]
+The most common case is where $X$ represents an IID random sample of a single random variable; the joint density and hence the likelihood is a product of the marginal densities of $X_{i}$, which are all the same:
+\[
+L(\theta|X) = \prod_{i=1}^{n}f(x_{i};\theta)
+\]
+For computational and theoretical reasons, we said we would work primarily with the *log-likelihood$,
+\[
+\ell(\theta) = \log{L(\theta)} \overset{IID}{=} \sum_{i=1}^{n}\ell_{i}(\theta)
+\]
+What does it mean, "for fixed $X$"? **Every time we take a ranodm sample $x = (x_{1},\ldots,x_{n})$, we get a different log-likelihood function**. This is the point: the likelihood describes the relative frequency with which each value of $\theta$ would have generated the observed data, in repeated sampling from a population with true parameter eqaul to $\theta$. Values of $\theta$ that give higher likelihoods would generate the observed data more frequently- and hence are said to be *more likely* to have generated the observed data.
+
+Let's take a look at this empirically. First we generate a single sample of size $n = 5$ from a $Bern(\theta)$ distribution, with $\theta_{0} = 0.5$ as the true value, and plot the log-likelihood. The log-likelihood for these data is
+\[
+\ell(\theta) = \sum_{i=1}^{n}x_{i} \log{\theta} + \left( n - \sum_{i=1}^{n}x_{i} \right)\log\left( 1 - \theta \right)
+\]
+```{r bern-1}
+set.seed(423798)
+n <- 5
+thetatrue <- 0.5
+samp <- rbinom(n,1,thetatrue)
+cat("Actual generated sample: ",samp,"\n")
+
+# Plot the log-likelihood
+bern_ll <- function(theta,x) {
+  sum(x)*log(theta) + (length(x) - sum(x)) * log(1 - theta)
+}
+
+data_frame(theta = seq(.01,.99,by=.01),
+           ll = bern_ll(theta,x = samp)) %>%
+  ggplot(aes(x = theta,y = ll,group = 1)) +
+  theme_classic() +
+  geom_line() +
+  geom_vline(xintercept = sum(samp) / length(samp),colour = "purple") +
+  geom_vline(xintercept = thetatrue,colour = "red") +
+  scale_x_continuous(breaks = seq(0,1,by=.1)) +
+  scale_y_continuous(breaks = seq(0,-15,by=-1)) +
+  labs(title = "Bernoulli Log-Likelihood for 5 Simulated Coin Flips",
+       subtitle = "Red line = true prob. of heads, purple line = maximum likelihood estimate",
+       x = "Theta (prob. of heads)",
+       y = "Log Likelihood")
+```
+
+Again: the likelihood for a given value of $\theta$ is the relative frequency with which that value of $\theta$ would have generated the data we observed. We are free to interpret "the data we observed" through the value of a *sufficient statistic*- as discussed last lecture and this lecture, the likelihood depends on the observed data only through a function of such a statistic. In our case, $T(X) = \sum_{i=1}^{n}X_{i}$, the number of heads, is a sufficient statistic. So we ask: with what frequency would each value of $\theta$ generate two heads in five flips of a coin?
+
+We can simulate this for each value of $\theta$, and plot the resulting curve. Note to get the actual numbers on the *y*-axis to be the same, we need to adjust for the normalizing constant. This won't affect the shape of the curve, since it's not a function of $\theta$. In practice this isn't an issue because we interpret only relative values of likelihoods (or differenes of log-likelihoods).
+```{r bern-2}
+simulate_flips <- function(theta,n=5,sumx=2) {
+  # Simulate a bunch of experiments with n flips of a coin with P(heads) = theta
+  # Return the log of the relative frequency with which the number of heads equals sumx
+  B <- 1000 # Number of simulations to do
+  experiment_has_two_heads <- numeric(B) # Record whether the experiment has two heads
+  for (b in 1:B) {
+    experiment_has_two_heads[b] <- as.numeric(sum(rbinom(n,1,theta)) == sumx)
+  }
+  
+  log(mean(experiment_has_two_heads)) - log(choose(n,sumx))
+}
+
+simulate_flips(.5)
+
+```
+
+```{r bern-3,cache=TRUE}
+# Vectorized version of the simulate function
+simulate_flips_v <- function(theta,n=5,sumx=2) {
+  out <- numeric(length(theta))
+  for (i in 1:length(theta)) {
+    out[i] <- simulate_flips(theta[i],n,sumx)
+  }
+  out
+}
+# Perform the simulation for various values of theta and plot:
+data_frame(theta = seq(.01,.99,by=.01),
+           ll = simulate_flips_v(theta)) %>%
+  ggplot(aes(x = theta,y = ll,group = 1)) +
+  theme_classic() +
+  geom_line() +
+  geom_vline(xintercept = sum(samp) / length(samp),colour = "purple") +
+  geom_vline(xintercept = thetatrue,colour = "red") +
+  scale_x_continuous(breaks = seq(0,1,by=.1)) +
+  scale_y_continuous(breaks = seq(0,-15,by=-1)) +
+  labs(title = "Bernoulli Empirical Log-Likelihood for 5 Simulated Coin Flips",
+       subtitle = "Relative frequency with which each value of theta generated a sample of 2 heads in 5 flips",
+       x = "Theta (prob. of heads)",
+       y = "Empirical Log Likelihood")
+```
