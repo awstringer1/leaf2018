@@ -409,55 +409,62 @@ $(document).ready(function () {
 <td>Dataset is heavily right-skewed; it looks exponential but an exponential distribution is not flexible enough. A gamma distribution fits well. Can be used to show a likelihood ratio test of shape = 1 for a gamma distribution</td>
 </tr>
 <tr class="odd">
+<td>Beeswax melting point data</td>
+<td>From Rice, <em>Mathematical Statistics and Data Analysis</em>. Available freely from his webpage, or from <a href="https://github.com/awstringer1/leaf2018/tree/gh-pages/datasets">here</a>, dataset beeswax.txt. See <a href="https://awstringer1.github.io/leaf2018/sta261-lecture4-maximum-likelihood.html">this course material</a> for commands to read the data into R.</td>
+<td>Univariate gaussian curve fitting; simple linear regression</td>
+<td>Gaussian distribution fits melting point well; linear regression of melting point on hydrocarbons gives adequate fit with assumptions met</td>
+<td></td>
+</tr>
+<tr class="even">
 <td>PVC Operator Data</td>
 <td>data(pvc); R package <strong>faraway</strong></td>
 <td>Continuous outcome and two discrete covariates, a 3x8 balanced full factorial design with 2 replicates in each group</td>
 <td>Basic two-factor ANOVA</td>
 <td>Model assumptions satisfied nicely; both main effects are significant but no significant interaction; good for introducing simple data analytic principles like plotting basic relationships between variables</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Warpbreaks data</td>
 <td>data(warpbreaks); R package <strong>faraway</strong></td>
 <td>Continuous outcome and two discrete covariates, 3x2 balanced full factorial with 9 replicates per group</td>
 <td>Two way ANOVA</td>
 <td>Response requires transformation to satisfy assumption of normality for ANOVA, a boxcox reveals the log-transformation does a good job of this. Interaction plots show clear presence of interaction between the two factors, which shows up as being marginally significant at the .05 level in an ANOVA on the logged response. This is good for discussing practical vs statistical significance, and some reasons why what is “obvious” from the plots might not show up as significant in the accompanying inferential procedure, and hence why both are important</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>orings data</td>
 <td>data(orings); R package <strong>faraway</strong></td>
 <td>Binomial response (# orings damaged) and one continuous covariate (temperature on launch day)</td>
 <td>Binomial GLM</td>
 <td>This is a classic dataset used to introduce binomial regression models. The group size is small which facilitates discussion about model assumptions and distributional approximations. The temperature on the day of launch when the Challenger shuttle exploded was well outside the range of observed temperatures in the dataset, which facilitates discussion about extrapolation</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Wisconsin Breast Cancer Data</td>
 <td>data(wbca); R package <strong>faraway</strong></td>
 <td>Binary response, 9 continuous covariates</td>
 <td>Logistic regression, variable selection</td>
 <td>Good small dataset to introduce logistic regression; possible to build a simple and well-performing predictive model; some correlation among the covariates, good for teaching variable selection</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Galapagos Islands species data</td>
 <td>data(gala); R package <strong>faraway</strong></td>
 <td>Count response, 5 continuous covariates</td>
 <td>Count regression</td>
 <td>Some covariates (e.g. Area) do well with a log transformation; good for variable selection; most of the observed counts are actually large enough that a normal linear model looks reasonable, except looking closer reveals that the constant variance assumption is violated, hence a log transformation on the response or a count regression are appropriate; the mean-variance relationship imposed by a Poisson regression is too restrictive, overdispersion is present</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Salmonella data</td>
 <td>data(salmonella); R package <strong>faraway</strong></td>
 <td>Count response, one discrete covariate with 6 levels</td>
 <td>Count regression, dose-response model</td>
 <td>Simple example of a variable transformation improving model fit. The log-linear model of dose fits the data poorly; transforming dose to log(dose + 1) improves the fit</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Smoking mortality data</td>
 <td>data(femsmoke); R package <strong>faraway</strong></td>
 <td>Count response and three discrete covariates (smoking status, age group, whether or not they died); example of a 3-way table</td>
 <td>Intermediate contingency table analysis</td>
 <td>Marginalizing over age leads to the conclusion that smokers are less likely to die, because in these data there are more young smokers than old smokers. Good for discussion of both survivorship bias (why are there less old smokers? Are they dying before study inclusion?) and confounding variables- if age weren’t measured, we would erroneously conclude that smoking improves health if we intepreted this study causally</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Hair/Eye colours</td>
 <td>data(haireye); R package <strong>faraway</strong></td>
 <td>4 x 4 table of counts of combinations of hair and eye colours</td>

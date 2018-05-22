@@ -44,6 +44,35 @@ This suggests a framework for estimation. If we have a family of probability dis
 
 ## Normal Distribution
 
-Consider the dataset from Rice (2006), page 258, on fluctuations in current across a muscle cell membrane containing a large number of independently operating channels. Measurements from each of the $49,152$ channels were obtained, and it was of scientific interest to fit a probability distribution to the data; estimated parameters from this fit would be used then to derive properties of scientific interest.
+Consider the dataset from Rice (2006), page 379, on the melting point in degrees celcius of beeswax. As described by Rice, the aim of the study was to detect synthetic additions to pure beeswax, and the science behind this dictates that the melting point is one way to measure this. It was of scientific interest to fit a probability model to these data. How to proceed?
 
-How to proceed? We can read in the data as follows:
+We can read in the data as follows:
+```{r beeswax-1}
+path <- "https://raw.githubusercontent.com/awstringer1/leaf2018/gh-pages/datasets/"
+beeswax <- readr::read_csv(stringr::str_c(path,"beeswax.txt"))
+glimpse(beeswax)
+
+```
+We see the dataset has two variables; we are interested in `MeltingPoint`. Let's make a histogram to investigate the shape of the distribution of this variable:
+```{r beeswax-2}
+beeswax %>%
+  ggplot(aes(x = MeltingPoint)) +
+  theme_classic() +
+  geom_histogram(bins = 25,colour = "black",fill = "red") +
+  labs(title = "Histogram of Beeswax Melting Points",
+       subtitle = "Beeswax data",
+       x = "Melting Point (degrees celcius",
+       y = "# of Samples")
+
+```
+It is hard to tell visually if a Gaussian curve would be a good fit, since the histogram is not very smooth due to the low sample size.
+
+Recall the Gaussian distribution has density given by
+\[
+f(x;\mu,\sigma^{2}) = \frac{1}{\sqrt{2\pi\sigma^{2}}}\times\exp\left( -\frac{1}{2\sigma^{2}}\left( x - \mu\right)^{2}\right)
+\]
+which for an IID random sample of size $n$ gives log-likelihood
+\[
+\ell(\mu,\sigma^{2}) = -\frac{n}{2}\log\left( 2\pi\sigma^{2}\right) -\frac{1}{2\sigma^{2}}\sum_{i=1}^{n}\left( x_{i} - \mu\right)^{2}
+\]
+Let's plot this for the beeswas data as a function of $\mu$ for fixed $\sigma^{2}$ and vice-versa:
