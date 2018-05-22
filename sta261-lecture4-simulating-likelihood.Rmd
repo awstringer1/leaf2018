@@ -1,6 +1,6 @@
 ---
 title: "STA261 Summer 2018 Lecture 4:" 
-subtitle: "Likelihood Functions"
+subtitle: "Simulating Likelihood Functions"
 author: "Alex Stringer"
 date: '`r Sys.Date()`'
 output: 
@@ -32,11 +32,11 @@ The most common case is where $X$ represents an IID random sample of a single ra
 \[
 L(\theta|X) = \prod_{i=1}^{n}f(x_{i};\theta)
 \]
-For computational and theoretical reasons, we said we would work primarily with the *log-likelihood$,
+For computational and theoretical reasons, we said we would work primarily with the *log-likelihood*,
 \[
 \ell(\theta) = \log{L(\theta)} \overset{IID}{=} \sum_{i=1}^{n}\ell_{i}(\theta)
 \]
-What does it mean, "for fixed $X$"? **Every time we take a ranodm sample $x = (x_{1},\ldots,x_{n})$, we get a different log-likelihood function**. This is the point: the likelihood describes the relative frequency with which each value of $\theta$ would have generated the observed data, in repeated sampling from a population with true parameter eqaul to $\theta$. Values of $\theta$ that give higher likelihoods would generate the observed data more frequently- and hence are said to be *more likely* to have generated the observed data.
+What does it mean, "for fixed $X$"? **Every time we take a random sample $x = (x_{1},\ldots,x_{n})$, we get a different log-likelihood function**. This is the point: the likelihood describes the relative frequency with which each value of $\theta$ would have generated the observed data, in repeated sampling from a population with true parameter eqaul to $\theta$. Values of $\theta$ that give higher likelihoods would generate the observed data more frequently- and hence are said to be *more likely* to have generated the observed data.
 
 # Examples
 
