@@ -1,5 +1,7 @@
 # Description
-This site hosts materials created by Alex Stringer in support of the LEAF project
+This site hosts materials created by Alex Stringer in support of the LEAF project.
+
+Github repository: [https://github.com/awstringer1/leaf2018](https://github.com/awstringer1/leaf2018)
 
 # Materials
 
@@ -11,7 +13,7 @@ Worked example from Horton (2013): probability problem with empirical and analyt
   - [Introduction: description of documents and learning objectives](http://awstringer1.github.io/leaf2018/horton2013-introduction.html)
   - [Description of the example studied and analytical solution](http://awstringer1.github.io/leaf2018/horton2013-example.html)
   - [Empirical investigation and solution](http://awstringer1.github.io/leaf2018/horton2013-empirical.html)
-  - [Comparison of anlaytical and empirical results](http://awstringer1.github.io/leaf2018/horton2013-comparison.html)
+  - [Comparison of anlaytical and empirical results](http://awstringer1.github.io/leaf2018/horton2013-compare.html)
   - [Discussion of potential student challenges in implementing the simulations](http://awstringer1.github.io/leaf2018/horton2013-challenges.html)
   - [Recommendations on implementing similar examples in statistics courses](http://awstringer1.github.io/leaf2018/horton2013-implementation.html)
   - [Example assessments](http://awstringer1.github.io/leaf2018/horton2013-.html)
