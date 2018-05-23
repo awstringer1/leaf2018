@@ -75,4 +75,60 @@ which for an IID random sample of size $n$ gives log-likelihood
 \[
 \ell(\mu,\sigma^{2}) = -\frac{n}{2}\log\left( 2\pi\sigma^{2}\right) -\frac{1}{2\sigma^{2}}\sum_{i=1}^{n}\left( x_{i} - \mu\right)^{2}
 \]
-Let's plot this for the beeswas data as a function of $\mu$ for fixed $\sigma^{2}$ and vice-versa:
+Let's plot this for the beeswax data as a function of $\mu$ for fixed $\sigma^{2}$ and vice-versa.
+```{r beeswax-3}
+ll_mu <- function(mu) {
+  x <- beeswax$MeltingPoint
+  s2 <- var(x)
+  n <- length(x)
+  out <- numeric(length(mu))
+  for (i in 1:length(mu)) {
+    out[i] <- -(n/2) * log(2*pi*s2) - (1/(2*s2)) * sum((x - mu[i])^2)
+  }
+  out
+}
+ll_sigma <- function(sigmasq) {
+  x <- beeswax$MeltingPoint
+  xbar <- mean(x)
+  n <- length(x)
+  out <- numeric(length(sigmasq))
+  for (i in 1:length(sigmasq)) {
+    out[i] <- -(n/2) * log(2*pi*sigmasq[i]) - (1/(2*sigmasq[i])) * sum((x - xbar)^2)
+  }
+  out
+}
+
+
+beeswax_muplot <-  data_frame(mu = seq(62.2,65,by=0.01),
+                              ll = ll_mu(mu)) %>%
+  ggplot(aes(x = mu,y = ll,group = 1)) +
+  theme_classic() + 
+  geom_line() +
+  geom_vline(xintercept = mean(beeswax$MeltingPoint),colour="purple") +
+  labs(title = "Log-Likelihood for mu, Beeswax Melting Point Data",
+       subtitle = "Sigma fixed at MLE. Purple line indictaes MLE for mu",
+       x = "Mu",
+       y = "Log-Likelihood") +
+  scale_x_continuous(breaks = seq(62,65,by=0.5))
+
+
+beeswax_sigmaplot <-  data_frame(sigmasq = seq(0.01,.5,by=0.01),
+                              ll = ll_sigma(sigmasq)) %>%
+  ggplot(aes(x = sigmasq,y = ll,group = 1)) +
+  theme_classic() + 
+  geom_line() +
+  geom_vline(xintercept = var(beeswax$MeltingPoint),colour="purple") +
+  labs(title = "Log-Likelihood for sigma-squared, Beeswax Melting Point Data",
+       subtitle = "Mu fixed at MLE. Purple line indicates MLE for sigma-squared",
+       x = "Sigma-Squared",
+       y = "Log-Likelihood")
+
+cowplot::plot_grid(beeswax_muplot,beeswax_sigmaplot,nrow=1)
+```
+We see some interesting things:
+
+  - The log-likelihood for $\mu$ is of the same shape as the density of $x_{i}$. This makes sense, because both are functions of $x_{i}$ and $\mu$ only through the $\sum_{i=1}^{n}(x_{i} - \mu)^{2}$ term, which is symmetric in both those arguments
+  - The MLE for $\mu$ is clearly at the centre of this plot, and equal to `r round(mean(beeswax$MeltingPoint),2)`- this is exactly the centre of the histogram of the data. Values of $\mu$ that are away from the maximum in either direction are equally less likely to have generated the observed data
+  - The situation for $\sigma^{2}$ is completely different. The MLE is the sample variance (as seen in lecture) as indicated by the purple line. Values very near the MLE are nearly exactly as likely to have generated the observed data as the MLE- we lack *precision* in estimating this parameter. We see also that values that are less than the MLE quickly become very unlikely, while values much larger than the MLE are still pretty likely. Think about what these values represent in the context of the data that was observed. We got a sample mean of `r round(mean(beeswax$MeltingPoint),2)` and a range of datapoints of `r round(range(beeswax$MeltingPoint),2)`. If the population variance were very small, say $0.02$, then seeing a value of $62.85$, say, would be extremely improbable, as this value would be over $5$ standard deviations from the mean. However, if the population variance were very large, say $0.5$, then all the values we have observed are actually quite close to the mean! Hence larger values of the population variance are much more likely to have generated the data we observed than small values.
+  
+Let's investigate further what different values of the parameters mean in the context of the data we have observed. Fixing $\sigma^{2}$ at its MLE $s_{n}^{2}$, we overlay a Normal density curve on the histogram of observed data, for $\mu$ at its MLE, $\bar{x}$:
