@@ -49,7 +49,11 @@ Materials that can be used during lecture as a supplement to traditional slides 
     - Plot likelihood functions for single random samples (**Methods**)
     - Simulate many datasets from distributions with particular parameter values, and link this to the concept of likelihood by plotting the results (**Methods**)
     
-    
+[Maximum Likelihood](http://awstringer1.github.io/leaf2018/sta261-lecture4-maximum-likelihood.html)
+
+  - Example courses: **STA261**, STA255, STA355
+  - Description: two examples. One fitting a normal distribution to beeswax melting point data; students fit multiple curves for different values of $\mu$ and $\sigma^{2}$, and compare how reasonable the curves look (in the context of the observed data) with where the corresponding values of the parameters lie on the log-likelihood curves. The other fits a Gamma distribution to the rainfall data previously fit using Method of Moments; this requires a very simple numerical optimization since the Gamma MLE does not have a closed-form solution
+  - Intended Learning Outcomes:
     
     
 ### Learnr Tutorials
