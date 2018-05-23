@@ -32,7 +32,7 @@ Materials that can be used during lecture as a supplement to traditional slides 
     - Create simulations in `R` to investigate theoretical results (**Computational Thinking**)
     - Plot univariate data using `ggplot` (**Methods**); interpret plots in the context of a problem and decide on further analysis (**Real World Problems**)
 
-[Fitting a Gamma distribution to rainfall data](http://awstringer1.github.io/leaf2018/sta261-lecture2-method-of-moments-gamma.html)
+[Fitting a Gamma distribution to rainfall data via Method of Moments](http://awstringer1.github.io/leaf2018/sta261-lecture2-method-of-moments-gamma.html)
 
   - Example Courses: **STA261**, STA255
   - Description: illustration of the application of the Method of Moments to data; plot a histogram of rainfall data, guess the family of distributions based on shape; estimate their parameters using the Method of Moments and plot the resulting curve; qualitatively evaluate the fit 

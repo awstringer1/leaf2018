@@ -42,7 +42,7 @@ This suggests a framework for estimation. If we have a family of probability dis
 
 # Examples
 
-## Normal Distribution
+## Normal Distribution - Beeswax Data
 
 Consider the dataset from Rice (2006), page 379, on the melting point in degrees celcius of beeswax. As described by Rice, the aim of the study was to detect synthetic additions to pure beeswax, and the science behind this dictates that the melting point is one way to measure this. It was of scientific interest to fit a probability model to these data. How to proceed?
 
@@ -204,5 +204,178 @@ cowplot::plot_grid(
     labs(subtitle = "Much higher sigma-squared - still pretty likely!"),
   nrow = 2,
   ncol = 2
+)
+```
+
+## Gamma Distribution - Rainfall Data
+
+Recall the data on rainfall in inches from $227$ Illinois storms between 1960 - 1964 discussed in the [Method of Moments example](http://awstringer1.github.io/leaf2018/sta261-lecture2-method-of-moments-gamma.html). We did a good job of fitting a Gamma distribution to these data, estimating the parameters $\alpha$ and $\beta$ via the Method of Moments. We also fit the simpler Exponential model, obtained from the Gamma model by setting $\alpha = 1$. The fit was poorer than the Gamma fit.
+
+Let's apply the method of Maximum Likelihood to estimating the parameters from these data. We will stick with the Gamma model, since the Method of Moments estimator and the Maximum Likelihood Estimator are the same (both equal $\bar{X}$) for the Exponential distribution. We hope that our MLE estimates will be very close to the MoM estimates, i.e. that both will give good fits. There is some theory that supports this notion.
+
+First, we plot the data and compute the MoM estimates as before:
+```{r rainfall-1}
+path <- "https://raw.githubusercontent.com/awstringer1/leaf2018/gh-pages/datasets/"
+rainfall <- readr::read_csv(stringr::str_c(path,"illinois60.txt"),col_names = "rainfall") %>%
+  bind_rows(readr::read_csv(stringr::str_c(path,"illinois61.txt"),col_names = "rainfall")) %>%
+  bind_rows(readr::read_csv(stringr::str_c(path,"illinois62.txt"),col_names = "rainfall")) %>%
+  bind_rows(readr::read_csv(stringr::str_c(path,"illinois63.txt"),col_names = "rainfall")) %>%
+  bind_rows(readr::read_csv(stringr::str_c(path,"illinois64.txt"),col_names = "rainfall"))
+
+glimpse(rainfall)
+
+rainplot <- rainfall %>%
+  ggplot(aes(x = rainfall)) +
+  theme_classic() + 
+  geom_histogram(aes(y = ..density..),colour = "black",fill = "#ff9933",bins=50) +
+  labs(title = "Emprical Distribution of Rainfall",
+       subtitle = "Illinois rainfall dataset, 227 storms from 1960 - 1964",
+       x = "Amount of Rainfall (inches)",
+       y = "Density")
+
+alpha_mom <- mean(rainfall$rainfall)^2 / var(rainfall$rainfall)
+alpha_mom
+lambda_mom <- mean(rainfall$rainfall) / var(rainfall$rainfall)
+lambda_mom
+
+rainplot +
+  geom_line(data = data_frame(x = seq(0,2.5,by=0.01),
+                              y = dgamma(x,shape = alpha_mom,rate = lambda_mom)),
+            mapping = aes(x = x,y = y,group = 1),
+            colour = "blue") +
+  labs(title = "Gamma Model for Rainfall Data - Method of Moments")
+
+```
+
+Let's plot the likelihood for $\alpha$ and $\lambda$ for these data and the Gamma model, and draw lines where the MoM estimators lie.
+
+```{r rainfall-2}
+gamma_loglik <- function(alpha = mean(x)^2 / var(x),
+                      lambda = mean(x) / var(x),
+                      x = rainfall$rainfall) {
+  sum(dgamma(x,shape = alpha,scale = lambda,log = TRUE))
+}
+
+gamma_loglik_v_alpha <- function(alpha,
+                      lambda = mean(x) / var(x),
+                      x = rainfall$rainfall) {
+  out <- numeric(length(alpha))
+  for (i in 1:length(alpha)) {
+    out[i] <- gamma_loglik(alpha[i],lambda,x)
+  }
+  out
+}
+gamma_loglik_v_lambda <- function(lambda,
+                      alpha = mean(x)^2 / var(x),
+                      x = rainfall$rainfall) {
+  out <- numeric(length(lambda))
+  for (i in 1:length(lambda)) {
+    out[i] <- gamma_loglik(lambda[i],alpha,x)
+  }
+  out
+}
+
+alpha_plot <- data_frame(a = seq(0.01,3,by=0.01),
+                         ll = gamma_loglik_v_alpha(alpha = a)) %>%
+  ggplot(aes(x = a,y = ll,group = 1)) +
+  theme_classic() + 
+  geom_line() +
+  geom_vline(xintercept = alpha_mom,colour = "purple") +
+  labs(title = "Log-Likelihood for Alpha",
+       subtitle = "Rainfall Data, Gamma Model - Lambda fixed at MoM value. Purple line is MoM Estimator",
+       x = "Alpha",
+       y = "Log-Likelihood") +
+  scale_x_continuous(breaks = seq(0,3,by=0.2)) +
+  scale_y_continuous(breaks = seq(200,-2000,by = -200),labels = scales::comma_format())
+
+lambda_plot <- data_frame(b = seq(0.01,3,by=0.01),
+                         ll = gamma_loglik_v_lambda(lambda = b)) %>%
+  ggplot(aes(x = b,y = ll,group = 1)) +
+  theme_classic() + 
+  geom_line() +
+  geom_vline(xintercept = lambda_mom,colour = "purple") +
+  labs(title = "Log-Likelihood for Lambda",
+       subtitle = "Rainfall Data, Gamma Model - Alpha fixed at MoM value. Purple line is MoM Estimator",
+       x = "Lambda",
+       y = "Log-Likelihood") +
+  scale_x_continuous(breaks = seq(0,3,by=0.2)) +
+  scale_y_continuous(breaks = seq(200,-2000,by = -200),labels = scales::comma_format())
+
+cowplot::plot_grid(alpha_plot,lambda_plot,nrow=2)
+```
+
+Each viewed on their own, the MoM estimators appear to be suboptimal when viewed from the perspective of the likelihood. What is happening? The problem is that each estimator depends on the other, and we are fixing each at its MoM value, and then looking at the resulting countour of the bivariate likelihood function. This isn't necessarily the correct contour to be looking at; different $\alpha$ values would produce different $\lambda$ curves, with potentially different optima.
+
+Let's try to maximize the likelihood, jointly. We will assume (because it is true; not going to prove/verify) that the log-likelihood is convex and possesses a unique optimum which is a maximum. The density of $X \sim Gamma(\alpha,\lambda)$ is
+$$
+f(x;\alpha,\lambda) = \frac{\lambda^{\alpha}}{\Gamma{(\alpha})} x^{\alpha-1}\exp\left( -\lambda x\right)
+$$
+The log-likelihood is then
+$$
+\ell(\alpha,\lambda) = n\alpha\log{\lambda} - n\log{\Gamma(\alpha)} - \lambda n \bar{x}
+$$
+The two score statistics here make up the *gradient* of the log-likelihood
+$$
+\begin{aligned}
+S(\alpha) &= \frac{\partial\ell}{\partial\alpha} = n\log{\lambda} - n\psi(\alpha) \\
+S(\lambda) &= \frac{\partial\ell}{\partial\lambda} = \frac{n\alpha}{\lambda} - n\bar{x} \\
+\nabla \ell &\equiv \left(S(\alpha),S(\lambda)\right)
+\end{aligned}
+$$
+where $\psi(\alpha) \equiv \partial \log{\Gamma(\alpha)} / \partial\alpha$ is the "digamma" function. Setting $\nabla \ell = 0$ gives a system of equations that are satisfied at the maximum. Trying to solve this yields
+$$
+\begin{aligned}
+\hat{\lambda} &= \frac{\hat{\alpha}}{\bar{x}} \\
+\log{\hat{\lambda}} &= \psi(\hat{\alpha})
+\end{aligned}
+$$
+which has no closed-form solution.
+
+We turn to iterative methods. Without going into the mathematical details of optimization, there are two simple methods we can use here:
+
+  - Code up the gradient and find its root using a root-finding method like Newton's Method
+  - Code up the log-likelihood itself and find its optimum using any box-constrained optimization routine (note there is a lot of overlap between these two possibilities!)
+
+`R` has good univariate root-finding methods in its `base` library, and there are special packages that can find multivariate roots. `R` has even better built-in optimization routines; the `nlminb` function peforms box-constrained optimization on essentially arbitrary functions. With such a well-behaved function, this is likely to be the quickest solution here.
+
+Let's give it a try:
+```{r rainfall-3}
+# nlminb requires the input function to be of a certain form
+# Note also that nlminb performs MINIMZATION. So if you want to maximize, your function
+# should return minus the value it usually returns
+input_function <- function(params) -gamma_loglik(alpha = params[1],lambda = params[2])
+# Perform the optimization on the upper quarter-plane in R^2 with (alpha,lambda) > 0
+# Use the method of moments estimates as starting values- this is very good practice
+opt <- nlminb(start = c(alpha_mom,lambda_mom),objective = input_function,lower = c(0.01,0.01))
+
+print(opt)
+
+alpha_mle <- opt$par[1]
+lambda_mle <- opt$par[2]
+
+```
+The MLEs are different than the MoM estimators. How different, in terms of log-likelihood?
+```{r rainfall-4}
+gamma_loglik(alpha = alpha_mle,lambda = lambda_mle) - 
+gamma_loglik(alpha = alpha_mom,lambda = lambda_mom)
+```
+The MLE's provide a much more likely set of parameters.
+
+Let's plot the resulting curves:
+```{r rainfall-5}
+cowplot::plot_grid(
+  rainplot +
+  geom_line(data = data_frame(x = seq(0,2.5,by=0.01),
+                              y = dgamma(x,shape = alpha_mom,rate = lambda_mom)),
+            mapping = aes(x = x,y = y,group = 1),
+            colour = "blue") +
+  labs(title = "Gamma Model for Rainfall Data - Method of Moments"),
+  rainplot +
+  geom_line(data = data_frame(x = seq(0,2.5,by=0.01),
+                              y = dgamma(x,shape = alpha_mle,rate = lambda_mle)),
+            mapping = aes(x = x,y = y,group = 1),
+            colour = "blue") +
+  labs(title = "Gamma Model for Rainfall Data - Maximum Likelihood"),
+  nrow = 1
 )
 ```
