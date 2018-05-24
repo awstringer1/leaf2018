@@ -54,6 +54,11 @@ Materials that can be used during lecture as a supplement to traditional slides 
   - Example courses: **STA261**, STA255, STA355
   - Description: two examples. One fitting a normal distribution to beeswax melting point data; students fit multiple curves for different values of $\mu$ and $\sigma^{2}$, and compare how reasonable the curves look (in the context of the observed data) with where the corresponding values of the parameters lie on the log-likelihood curves. The other fits a Gamma distribution to the rainfall data previously fit using Method of Moments; this requires a very simple numerical optimization since the Gamma MLE does not have a closed-form solution
   - Intended Learning Outcomes:
+    - Be able to apply maximum likelihood estimation to random samples from a known density with one or two unknown parameters (**Methods**)
+    - Understand the definition of the likelihood function as the probability that the chosen model and parameters assign to the observed data (**Theory**)
+    - Implement simulations of observed data for various parameter values in a parametric statistical model; plot the resulting frequency curve and compare it to the theoretical likelihood function (**Computational Thinking**)
+    - Apply maximum likelihood estimation in cases where no closed-form solution exists and numerical optimization must be used (**Methods**)
+    - Fit frequency curves to data using the method of maximum likelihood (**Real World Problems**)
     
     
 ### Learnr Tutorials
