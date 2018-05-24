@@ -156,7 +156,7 @@ We can use `typeof` function to get the type of a vector:
 ```{r echo=TRUE, cache=TRUE}
 typeof(num); typeof(int); typeof(coin)
 ```
-The last type that will discuss is logicals. Logical vectors store TRUEs and FALSEs, Rís form of Boolean data. 
+The last type that will discuss is logicals. Logical vectors store TRUEs and FALSEs, R‚Äôs form of Boolean data. 
 TRUE or FALSE in capital letters (without quotation marks) will be treated as logical data:
 ```{r echo=TRUE, eval=TRUE}
 logic <- c(TRUE,FALSE,FALSE,TRUE)
@@ -229,7 +229,7 @@ names(x) <- name
 x
 ```
 Following the example construct a vector `die` with values 1,2,3,4,5 and 6 with 
-names "one","twoí,,"six" and see the resulting vector.
+names "one","two‚Äô,,"six" and see the resulting vector.
 ```{r ex2.3, exercise=TRUE}
 die <- c(
 ```
@@ -511,9 +511,9 @@ extract all observations for which `mpg` is greater than 16 AND `cyl` is 8:
 ```{r echo=TRUE, eval=TRUE}
 mtcars[mtcars$mpg>16 & mtcars$cyl==8,]
 ```
-Two important observations from the last example are that logical ìANDî is represented by `&` in R and for
-checking equality in logical statements we have to enter double equal sign `==`. If instead of ìANDî statement
-we had ìORî, the code would remain the same except that `&` must be changed to `|`. 
+Two important observations from the last example are that logical ‚ÄúAND‚Äù is represented by `&` in R and for
+checking equality in logical statements we have to enter double equal sign `==`. If instead of ‚ÄúAND‚Äù statement
+we had ‚ÄúOR‚Äù, the code would remain the same except that `&` must be changed to `|`. 
 
 ### Exercises
 
