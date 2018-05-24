@@ -48,6 +48,7 @@ Materials that can be used during lecture as a supplement to traditional slides 
   - Intended Learning Outcomes:
     - Plot likelihood functions for single random samples (**Methods**)
     - Simulate many datasets from distributions with particular parameter values, and link this to the concept of likelihood by plotting the results (**Methods**)
+    - Implement simulations of observed data for various parameter values in a parametric statistical model; plot the resulting frequency curve and compare it to the theoretical likelihood function (**Computational Thinking**)
     
 [Maximum Likelihood](http://awstringer1.github.io/leaf2018/sta261-lecture4-maximum-likelihood.html)
 
@@ -56,7 +57,6 @@ Materials that can be used during lecture as a supplement to traditional slides 
   - Intended Learning Outcomes:
     - Be able to apply maximum likelihood estimation to random samples from a known density with one or two unknown parameters (**Methods**)
     - Understand the definition of the likelihood function as the probability that the chosen model and parameters assign to the observed data (**Theory**)
-    - Implement simulations of observed data for various parameter values in a parametric statistical model; plot the resulting frequency curve and compare it to the theoretical likelihood function (**Computational Thinking**)
     - Apply maximum likelihood estimation in cases where no closed-form solution exists and numerical optimization must be used (**Methods**)
     - Fit frequency curves to data using the method of maximum likelihood (**Real World Problems**)
     

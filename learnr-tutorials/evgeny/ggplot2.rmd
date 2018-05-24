@@ -1,0 +1,641 @@
+---
+title: "Introduction to ggplot2"
+output: learnr::tutorial
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+library(nycflights13)
+library(openintro)
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Introduction:
+
+Usually in data analysis we are working with a data frame with many variables. Plots and graphs provide important insight on the distributions of these variables and their dependencies/relationships. Therefore a visual inspection frequently can give us more information about the analyzed data than by looking at summary statistics alone.
+
+However it is crucial to understand that different types of plots and graphs are appropriate for different type of variables. In this tutorials we show which graphical methods are helpful for one numerical (or quantitative, or continuous) variable, for one discrete (or qualitative, or categorical) variable and ways to visualize more than one variable. 
+
+To construct graphs/plots in R we are going to use `ggplot2` package which is part of `tidyverse`. So when you open a new R session make sure that you load this package (of course it must be first installed):
+```{r echo=T,eval=T}
+library(tidyverse)
+```
+
+## Plots for one quantitative variable: 
+
+In this section we show how to use `ggplot2` functions to visualize one quantitative variable. Consider a `diamonds` data sets (part of `ggplot2` package) that contains prices, weights, colors and other characteristics for thousands of diamonds:
+```{r eval=T,echo=T}
+diamonds
+```
+We focus on `price` variable (which is continuous) and we may ask these standard questions: what is its distribution?, is it left skewed, right skewed or symmetric?, how many modes does it have?, are there outliers?. We can answer all these questions by plotting a 'histogram'. The idea is to divide variable's values into bins, and then count number of values in each bin. The R code for histogram is the following:
+```{r echo=T,eval=T}
+ggplot(data = diamonds, aes(x = price)) +
+  geom_histogram()
+```
+
+Note that in the first line we specify a data frame (which is `diamonds` in our example), and the variable of interest `price` for horizontal variable `x`. After `+` sign we add `geom_histogram()` which is a command for the histogram. By default R plots 30 bins but we can change the histogram by changing the bin widths, for example:
+```{r echo=T,eval=T}
+ggplot(data = diamonds, aes(x = price)) +
+            geom_histogram(binwidth=10)
+ggplot(data = diamonds, aes(x = price)) +
+            geom_histogram(binwidth=2000)
+```
+
+See how the graph changes with various `binwidth`s. Looking at these histograms we can say that the distribution of `price` is very right skewed (many large observations), uni-modal (one mode at price of 500) and does not have unusual observations (observations that are far away from the rest).
+
+Frequently instead of counts on y-axis we are interested in the densities, which are counts divided by appropriate constant so that the area of the histogram would be 1. In that case the height of a rectangle multiplied by its width represents the proportion (instead of count) of values inside that bin:
+```{r echo=T,eval=T}
+ggplot(data = diamonds, aes(x = price,..density..)) +
+  geom_histogram(binwidth=1000)
+```
+
+The shapes of a standard histogram and density-histogram are the same the only difference is the values on y-axis. 
+Another way of estimating a density is called "Kernel Density Estimation". The mathematical formula for kernel density is:
+$$\hat f(x)=\frac{1}{nh}\sum_{i=1}^{n}W\left(\frac{x-X_i}{h}\right).$$
+Where $X_i$, $i=1,\ldots,n$ are values of a variable (`price` variable in our case), $n$ is the sample size, $h$ is a bandwidth similar to bin width for a histogram and $W$ is some known function. Popular choices for $W$ are 'rectangular' kernel
+$$W(x)=\left\{
+    \begin{array}{l}
+      \frac{1}{2},\mbox{ If }|x|\leq 1\\
+      0,\mbox{ If }|x|>1
+    \end{array}
+  \right. $$
+and 'Gaussian' kernel:
+$$W(x)=\frac{1}{\sqrt{2\pi}}\exp\left(-\frac{1}{2}x^2\right),-\infty<x<\infty.$$
+Of course we do not need to calculate these densities by hand we can ask R to do that, lets make a histogram with 'rectangular' kernel density on the same plot:
+```{r echo=T,eval=T}
+ggplot(data = diamonds, aes(x = price,..density..)) +
+  geom_histogram() + geom_density(kernel = "rectangular" )
+```
+
+Similarly with 'Gaussian' kernel:
+```{r echo=T,eval=T}
+ggplot(data = diamonds, aes(x = price,..density..)) +
+  geom_histogram() + geom_density(kernel = "gaussian" )
+```
+
+Note the structure of `ggplot2` functions, we first specify data and variables then add a histogram with `geom_histogram()` and then add a density with `+` sign and `geom_density()`. If we want to construct a kernel density without a histogram then we just ignore `geom_histogram()` function.
+We observe that both kernels produce similar density curves and they are very similar to density histogram. One can change bandwidth $h$ of a kernel by adding `bw` argument to `geom_density()`. 
+
+
+Another appropriate visual representation for quantitative variables is a box plot. Lets plot one for the `price` variable using `geom_boxplot()` function:
+```{r echo=T, eval=T}
+ggplot(data = diamonds, aes(x="Price of diamonds",y = price)) +
+    geom_boxplot()
+```
+
+Here y-axis corresponds to variable's values and we have to give some title to x-axis ("Price of diamonds" for example). The edges of the box correspond to 1st and 3rd quartiles and the middle line is the median. Recall the definitions: 25\% of data points are below 1st quartile, 50\% below median and 75\% below 3rd quartile. We can get the actual values for these quantities using `summary()` function:
+```{r echo=T,eval=T}
+summary(diamonds$price)
+```
+As a measure of spread we define Inter-quartile range (IQR) which is the difference between 3rd and 1st quartiles (i.e. length of the box). All observations that are smaller than the 1st quartile by more than $1.5\times\mbox{IQR}$ or larger than the 3rd quartile by more than $1.5\times\mbox{IQR}$ are considered as outliers and represented by bold dots on the box plot. We see that the plotted box plot shows many large 'outliers' and similar to the histogram shows right skewness of the `price` variable. We can rotate the box plot using `coord_flip()` function:
+```{r echo=T, eval=T}
+ggplot(data = diamonds, aes(x="Price of diamonds",y = price)) +
+    geom_boxplot() + coord_flip()
+```
+
+Now variable's values are on the horizontal axis and it is easier to compare it with the histogram.
+
+### Exercises
+
+The exercises will be based on `mtcars` data set:
+```{r echo=F,eval=T,cache=T}
+mtcars <- as.tibble(mtcars)
+mtcars
+```
+**A.** Plot a histogram (with default arguments) of `mpg` (miles per gallon) variable:
+```{r, ex.gg.1.1, exercise=TRUE}
+ggplot()
+```
+```{r ex.gg.1.1-hint-1}
+ggplot(data = mtcars,
+```
+```{r ex.gg.1.1-hint-2}
+ggplot(data = mtcars, aes(x = mpg)) +
+```
+```{r ex.gg.1.1-solution}
+ggplot(data = mtcars, aes(x = mpg)) +
+            geom_histogram()
+```
+**B.** Plot a histogram of `mpg` variable and change bin width to 1,2,5,7 and 10. Which bin width do you prefer?
+```{r, ex.gg.1.2, exercise=TRUE}
+ggplot()
+```
+```{r ex.gg.1.2-hint-1}
+ggplot(data = mtcars,
+```
+```{r ex.gg.1.2-hint-2}
+ggplot(data = mtcars, aes(x = mpg)) +
+            geom_histogram
+```
+```{r ex.gg.1.2-solution}
+ggplot(data = mtcars, aes(x = mpg)) +
+            geom_histogram(binwidth=1)
+```
+**C.** Plot a density histogram of `mpg` variable with bin width equal to 5. Add to this plot a 'rectangular' kernel density, repeat the same with 'Gaussian' kernel:
+```{r, ex.gg.1.3, exercise=TRUE}
+ggplot()
+```
+```{r ex.gg.1.3-hint-1}
+ggplot(data = mtcars,
+```
+```{r ex.gg.1.3-hint-2}
+ggplot(data = mtcars, aes(x = mpg,..density..)) +
+```
+```{r ex.gg.1.3-hint-3}
+ggplot(data = mtcars, aes(x = mpg,..density..)) +
+        geom_histogram(binwidth=5)
+```
+```{r ex.gg.1.3-hint-4}
+ggplot(data = mtcars, aes(x = mpg,..density..)) +
+        geom_histogram(binwidth=5) + geom_density()
+```
+```{r ex.gg.1.3-solution}
+ggplot(data = mtcars, aes(x = mpg,..density..)) +
+        geom_histogram(binwidth=5) + geom_density(kernel="rectangular")
+```
+**D.** Plot a density histogram of `mpg` variable with bin width equal to 5. Add to this plot a 'Gaussian' kernel density, change the bandwidth (`bw` argument) to 1,2,5,7 and 10. Note how increasing the bandwidth $h$ makes estimated density flatter:
+```{r, ex.gg.1.4, exercise=TRUE}
+ggplot()
+```
+```{r ex.gg.1.4-hint-1}
+ggplot(data = mtcars,
+```
+```{r ex.gg.1.4-hint-2}
+ggplot(data = mtcars, aes(x = mpg,..density..)) +
+```
+```{r ex.gg.1.4-hint-3}
+ggplot(data = mtcars, aes(x = mpg,..density..)) +
+        geom_histogram(binwidth=5)
+```
+```{r ex.gg.1.4-hint-4}
+ggplot(data = mtcars, aes(x = mpg,..density..)) +
+        geom_histogram(binwidth=5) + geom_density(kernel="gaussian")
+```
+```{r ex.gg.1.4-solution}
+ggplot(data = mtcars, aes(x = mpg,..density..)) +
+        geom_histogram(binwidth=5) + geom_density(kernel="gaussian",bw=1)
+```
+**E.** Plot a box plot of `mpg` variable and answer 3 questions below:
+```{r, ex.gg.1.5, exercise=TRUE}
+ggplot()
+```
+```{r ex.gg.1.5-hint-1}
+ggplot(data = mtcars,
+```
+```{r ex.gg.1.5-hint-2}
+ggplot(data = mtcars, aes(x = "Miles per gallon", y=mpg)) +
+```
+```{r ex.gg.1.5-solution}
+ggplot(data = mtcars, aes(x = "Miles per gallon", y=mpg)) +
+        geom_boxplot()
+```
+```{r ex.gg.1.5-question, echo=FALSE}
+quiz(caption = "",
+     question("What is the number of potential outliers?",
+              answer(sprintf("%s",0)),
+              answer(sprintf("%s",1), correct = TRUE),
+              answer(sprintf("%s",2)),
+              answer(sprintf("%s",3)),
+              random_answer_order = TRUE,
+              allow_retry = FALSE),
+     question("Approximately what proportion of the data is above 15.4?",
+              answer("25%"),
+              answer("75%", correct = TRUE),
+              answer("50%"),
+              random_answer_order = TRUE,
+              allow_retry = FALSE),
+     question("Approximately what proportion of the data is below 19.2?",
+              answer("25%"),
+              answer("50%", correct = TRUE),
+              answer("75%"),
+              random_answer_order = TRUE,
+              allow_retry = FALSE) )
+     
+     
+```
+**F.** Plot a box plot of `wt` (weight) variable, make it horizontal and answer 3 questions below:
+```{r, ex.gg.1.6, exercise=TRUE}
+ggplot()
+```
+```{r ex.gg.1.6-hint-1}
+ggplot(data = mtcars,
+```
+```{r ex.gg.1.6-hint-2}
+ggplot(data = mtcars, aes(x = "Weight", y=wt)) +
+```
+```{r ex.gg.1.6-hint-3}
+ggplot(data = mtcars, aes(x = "Weight", y=wt)) +
+        geom_boxplot()
+```
+```{r ex.gg.1.6-solution}
+ggplot(data = mtcars, aes(x = "Weight", y=wt)) +
+        geom_boxplot() + coord_flip()
+```
+```{r ex.gg.1.6-question, echo=FALSE}
+quiz(caption = "",
+     question("What is the number of potential outliers?",
+              answer(sprintf("%s",0)),
+              answer(sprintf("%s",3), correct = TRUE),
+              answer(sprintf("%s",2)),
+              answer(sprintf("%s",4)),
+              random_answer_order = TRUE,
+              allow_retry = FALSE),
+     question("Approximately what proportion of the data is above 3.6?",
+              answer("75%"),
+              answer("25%", correct = TRUE),
+              answer("50%"),
+              random_answer_order = TRUE,
+              allow_retry = FALSE),
+     question("Approximately what proportion of the data is below 2.6?",
+              answer("50%"),
+              answer("25%", correct = TRUE),
+              answer("75%"),
+              random_answer_order = TRUE,
+              allow_retry = FALSE) )
+     
+```
+
+## Plots for one qualitative variable:
+
+As in a previous section we start with `diamonds` data set:
+```{r echo=F,eval=T}
+diamonds
+```
+Here we focus on `cut` variable that describes the quality of a diamond cut. It can be either "Fair", "Good", "Very Good", "Premium" or "Ideal". Obviously it is a qualitative (or categorical) variable since it can only take 5 discrete states, therefore histograms and box plots are not appropriate graphical summaries for this variable. To visualize the distribution of a qualitative variable we can use a 'bar plot' :
+```{r echo=T, eval=T}
+ggplot(data=diamonds, aes(x=cut)) +
+       geom_bar()
+```
+
+Note that in the first line we put `x=cut` since we are interested in `cut` variable and after `+` sign we type `geom_bar()` (very similar to histogram's R code). The height of each bar corresponds to the number of observations at that category. For example the bar for "Ideal" is higher than for "Very Good" which means that ideal cuts are encountered more frequently. We can make the bars horizontal by adding `coord_flip()`:
+```{r echo=T, eval=T}
+ggplot(data=diamonds, aes(x=cut)) +
+       geom_bar() + coord_flip()
+```
+
+We can also get these counts with `table()` function:
+```{r echo=T,eval=T}
+table( diamonds$cut )
+```
+Remember that `$` sign extracts a variable (on the right side) from a data frame (on the left side). 
+
+In probability and statistics we are more interested in the frequency (or proportion) with which each category occurs rather than counts. To get these frequencies we just have to divide counts by the total number of observations. For numerical summary we can do the following:
+```{r echo=T,eval=T}
+table( diamonds$cut ) / length( diamonds$cut )
+```
+Note that `length()` of a vector returns the number of elements in this vector.
+To plot a bar plot of the frequencies we do the following:
+```{r echo=T, eval=T}
+ggplot(data=diamonds, aes(x=cut, (..count..)/sum(..count..) )) +
+       geom_bar()
+```
+
+We only added `(..count..)/sum(..count..)` in `aes()` function. Now each bar corresponds to proportion instead of count. Inspecting the plot we can say for example that about $65\%$ ($0.25+0.40$) of diamonds have either `Premium` or `Ideal` cuts.
+
+### Exercises
+
+All exercises are bases on `mtcars` data frame:
+```{r eval=T, echo=F}
+mtcars
+```
+
+**A.** Construct a bar-plot of `cyl` (number of cylinders) variable and make bars horizontal:
+```{r, ex.gg.2.1, exercise=TRUE}
+ggplot()
+```
+```{r ex.gg.2.1-hint-1}
+ggplot(data = mtcars,
+```
+```{r ex.gg.2.1-hint-2}
+ggplot(data = mtcars, aes(x = cyl)) +
+```
+```{r ex.gg.2.1-hint-3}
+ggplot(data = mtcars, aes(x = cyl)) +
+        geom_bar()
+```
+```{r ex.gg.2.1-solution}
+ggplot(data = mtcars, aes(x = cyl)) +
+        geom_bar() + coord_flip()
+```
+
+**B.** Construct a bar-plot of `cyl` variable with frequencies on the vertical axis and answer two questions below:
+```{r, ex.gg.2.2, exercise=TRUE}
+ggplot()
+```
+```{r ex.gg.2.2-hint-1}
+ggplot(data = mtcars,
+```
+```{r ex.gg.2.2-hint-2}
+ggplot(data = mtcars, aes(x = cyl)) +
+```
+```{r ex.gg.2.2-hint-3}
+ggplot(data = mtcars, aes(x = cyl,(..count..)/sum(..count..) ))
+```
+```{r ex.gg.2.2-solution}
+ggplot(data = mtcars, aes(x = cyl,(..count..)/sum(..count..) )) +
+        geom_bar() 
+```
+```{r ex.gg.2.2-question, echo=FALSE}
+quiz(caption = "",
+     question("What is the approximate proportion of cars with 6 cylinders?",
+              answer(sprintf("%s",0.35)),
+              answer(sprintf("%s",0.21), correct = TRUE),
+              answer(sprintf("%s",0.44)),
+              answer(sprintf("%s",0.13)),
+              random_answer_order = TRUE,
+              allow_retry = FALSE),
+     question("What is the approximate proportion of cars with 6 or 8 cylinders?",
+              answer("0.20"),
+              answer("0.60", correct = TRUE),
+              answer("0.50"),
+              answer("0.80"),
+              random_answer_order = TRUE,
+              allow_retry = FALSE)
+      )
+     
+```
+
+**C.** Construct a bar-plot of `gear` (number of forward gears) variable with frequencies on the vertical axis and answer two questions below:
+```{r, ex.gg.2.3, exercise=TRUE}
+ggplot()
+```
+```{r ex.gg.2.3-hint-1}
+ggplot(data = mtcars,
+```
+```{r ex.gg.2.3-hint-2}
+ggplot(data = mtcars, aes(x = gear)) +
+```
+```{r ex.gg.2.3-hint-3}
+ggplot(data = mtcars, aes(x = gear,(..count..)/sum(..count..) ))
+```
+```{r ex.gg.2.3-solution}
+ggplot(data = mtcars, aes(x = gear,(..count..)/sum(..count..) )) +
+        geom_bar() 
+```
+```{r ex.gg.2.3-question, echo=FALSE}
+quiz(caption = "",
+     question("What is the approximate proportion of cars with 5 forward gears?",
+              answer(sprintf("%s",0.35)),
+              answer(sprintf("%s",0.15), correct = TRUE),
+              answer(sprintf("%s",0.25)),
+              answer(sprintf("%s",0.45)),
+              random_answer_order = TRUE,
+              allow_retry = FALSE),
+     question("What is the approximate proportion of cars with 4 or 5 forward gears?",
+              answer("0.15"),
+              answer("0.50", correct = TRUE),
+              answer("0.35"),
+              answer("0.75"),
+              random_answer_order = TRUE,
+              allow_retry = FALSE)
+      )
+     
+```
+
+## Plots for two or more variables:
+
+In this section we discuss how to visualize relationships between two or more variables. Again we consider `diamonds` data frame, but since it is very large (almost 50000 rows) lets randomly sample one thousand rows using `sample_n` function and call the new data frame `diamonds.small`:
+```{r echo=F,eval=T}
+set.seed(1234)
+```
+```{r echo=T, eval=T}
+diamonds.small <- diamonds %>% sample_n(1000, replace=FALSE) 
+diamonds.small
+```
+
+Lets investigate the relationship between `price` and `cut` variables. Note that one is quantitative while another is categorical. In this case we can plot box-plots for the `price` variable for each category of `cut`:
+```{r echo=T,eval=T}
+ggplot(data=diamonds.small, aes(x=cut, y=price)) +
+    geom_boxplot() + labs(x="Cut of diamond", y="Price of diamond")
+```
+
+The code is very similar to the one that we used for a single box plot. The only difference is that we put `x=cut` in `aes`. Generally `y` (vertical axis) must be equal to a quantitative variable while `x` (horizontal) to categorical one. We also added axes' labels using `labs` function. In this example we can say that distributions of prices for different levels of `cut` are approximately the same. All are right skewed (many large observations), medians are very similar, and not much difference in spreads (IQRs).
+
+Next suppose we have two quantitative (numerical) variables, for example `price` and `carat` (weight). We are interested in how the price of a diamond changes with its weight, we expect that the average price should increase with the weight. To check that we can construct a scatter plot of these two variables:
+```{r echo=T,eval=T}
+ggplot(data=diamonds.small, aes(x=carat, y=price)) +
+    geom_point() + labs(x="Weight in carats", y="Price in US dollars")
+```
+
+Note that the scatter plot is produced with `geom_point()` function, we also decided to put `price` and `carat` on vertical and horizontal axes respectively (so `x=carat` and `y=price`). One can observe that the average price of a diamond increases with its weight. To see the trend better we can add a smoother using `geom_smooth()` function:
+```{r echo=T,eval=T}
+ggplot(data=diamonds.small, aes(x=carat, y=price)) +
+    geom_point() + geom_smooth() +
+    labs(x="Weight in carats", y="Price in US dollars")
+```
+
+If we think that a line of best fit (simple regression) is appropriate relationship between two numerical variables we can ask R to plot it by typing `method="lm"` inside `geom_point()`:
+```{r echo=T,eval=T}
+ggplot(data=diamonds.small, aes(x=carat, y=price)) +
+    geom_point() + geom_smooth(method="lm") +
+    labs(x="Weight in carats", y="Price in US dollars")
+```
+
+If we are interested in the relationship between 2 categorical variables, for example `cut` and `color`, we can plot a bar-plot of counts for `cut` variable for each color like that:
+```{r echo=T,eval=T}
+ggplot(data=diamonds.small, aes(x=color, fill=cut)) +
+    geom_bar() 
+```
+
+By default R produces stacked bar-plots, one can plot standard bar-plots by adding `position="dodge"` in `geom_bar()`:
+```{r echo=T,eval=T}
+ggplot(data=diamonds.small, aes(x=color, fill=cut)) +
+    geom_bar(position="dodge") 
+```
+
+
+A more complicated problem is to make a graph (or graphs) that show relationship between 3 variables. For example how price and weight relate depending on a type of cut. Now we have two numerical (quantitative) variables and one categorical. One way to visualize it, is to make a scatter plot of `price` versus `carat` where dots' colors change with type of `cut`:
+```{r echo=T,eval=T}
+ggplot(data=diamonds.small, aes(x=carat, y=price, colour=cut)) +
+    geom_point() + labs(x="Weight in carats", y="Price in US dollars")
+```
+
+The code is very similar to the one we used for a simple scatter plot, the only difference is `colour=cut` inside `aes()` function. It seems that for a given weight, average prices of "Ideal" and "Premium" cut diamonds are higher than for example "Fair" or "Good" cuts, which makes sense. Instead of dots and colors we can print labels of cuts in the scatter plot:
+```{r echo=T,eval=T}
+ggplot(data=diamonds.small, aes(x=carat, y=price, label=cut)) +
+    geom_text(size=2) + labs(x="Weight in carats", y="Price in US dollars")
+```
+
+We only changed `colour=cut` and `geom_point()` to `label=cut` and `geom_text()` respectively. Font size of the text can be changed by the `size` argument in `geom_text()`.
+
+
+So far we have constructed only one scatter plot and added the third categorical variable (`cut`) using colors or labels. Another way is to plot separate scatter plots of `price` versus `carat` for every level of `cut`. In `ggplot2` we can do it using "faceting":
+```{r echo=T,eval=T}
+ggplot(data=diamonds.small, aes(x=carat, y=price)) +
+    geom_point() + facet_wrap(~cut)  + 
+    labs(x="Weight in carats", y="Price in US dollars")
+```
+
+Note that we add `facet_wrap()` with grouping variable `cut` after `~` inside the parentheses. These scatter plots make comparisons much easier. 
+
+Finally, if we want to connect dots with lines in a scatter plot we can implement
+`geom_line()` function:
+```{r echo=T,eval=T}
+ggplot(data=diamonds.small, aes(x=carat, y=price)) +
+    geom_point() + geom_line() + facet_wrap(~cut)  + 
+    labs(x="Weight in carats", y="Price in US dollars")
+```
+
+It is also possible to plot lines without dots by using the previous R code but ignoring `geom_point()`.
+
+### Exercises
+
+Exercises below are based on `mpg` data set from `ggplot2` package:
+```{r echo=F, eval=T,cache=T}
+mpg <- mutate(mpg, cyl=as.factor(cyl))
+mpg
+```
+You can consider `cyl` (number of cylinders) as categorical variable for this set of questions.
+
+**A.** How `hwy` (high way miles per gallon) variable is related to the number of cylinders (`cyl`)? Plot box plots of `hwy` for each category of `cyl` and answer 3 questions below:
+```{r, ex.gg.3.1, exercise=TRUE}
+ggplot()
+```
+```{r ex.gg.3.1-hint-1}
+ggplot(data = mpg,
+```
+```{r ex.gg.3.1-hint-2}
+ggplot(data = mpg, aes(x = cyl, y = hwy)) +
+```
+```{r ex.gg.3.1-solution}
+ggplot(data = mpg, aes(x = cyl, y = hwy)) +
+        geom_boxplot()
+```
+```{r ex.gg.3.1-question, echo=FALSE}
+quiz(caption = "",
+     question("What is the number of potential outliers for cars with 4 cylinders?",
+              answer(sprintf("%s",1)),
+              answer(sprintf("%s",2), correct = TRUE),
+              answer(sprintf("%s",3)),
+              answer(sprintf("%s",0)),
+              random_answer_order = TRUE,
+              allow_retry = FALSE),
+     question("Approximately what proportion of cars with 6 cylinders can go less than 24 highway miles per gallon?",
+              answer("25%"),
+              answer("50%", correct = TRUE),
+              answer("75%"),
+              random_answer_order = TRUE,
+              allow_retry = FALSE),
+     question("Approximately what proportion of cars with 4 cylinders can go more than 31 highway miles per gallon?",
+              answer("50%"),
+              answer("25%", correct = TRUE),
+              answer("75%"),
+              random_answer_order = TRUE,
+              allow_retry = FALSE) )
+     
+```
+
+**B.** How `hwy` (high way miles per gallon) variable is related to the engine displacement (`displ`)? Plot a scatter plot of `hwy` variable (on vertical axis) versus `displ` (horizontal axis) with a smoother (default) and answer one question below:
+```{r, ex.gg.3.2, exercise=TRUE}
+ggplot()
+```
+```{r ex.gg.3.2-hint-1}
+ggplot(data = mpg,
+```
+```{r ex.gg.3.2-hint-2}
+ggplot(data = mpg, aes(x = displ, y = hwy)) +
+```
+```{r ex.gg.3.2-hint-3}
+ggplot(data = mpg, aes(x = displ, y = hwy)) +
+        geom_point()
+```
+```{r ex.gg.3.2-solution}
+ggplot(data = mpg, aes(x = displ, y = hwy)) +
+        geom_point() + geom_smooth()
+```
+```{r ex.gg.3.2-question, echo=FALSE}
+     question("Generally as engine displacement increases what happens to the average highway miles per gallon?",
+              answer("Stays the same"),
+              answer("Decreases", correct = TRUE),
+              answer("Increases"),
+              random_answer_order = TRUE,
+              allow_retry = FALSE)
+```
+
+**C.** Plot a scatter plot of `hwy` variable (on vertical axis) versus `displ` (horizontal axis), make dots have different colors for different number of cylinders (`cyl`):
+```{r, ex.gg.3.3, exercise=TRUE}
+ggplot()
+```
+```{r ex.gg.3.3-hint-1}
+ggplot(data = mpg,
+```
+```{r ex.gg.3.3-hint-2}
+ggplot(data = mpg, aes(x = displ, y = hwy, colour = cyl)) +
+```
+```{r ex.gg.3.3-solution}
+ggplot(data = mpg, aes(x = displ, y = hwy, colour = cyl)) +
+        geom_point()
+```
+
+**D.** For each category of `cyl` variable make a scatter plot of `hwy` variable (on vertical axis) versus `displ` (horizontal axis) with a line of best fit:
+```{r, ex.gg.3.4, exercise=TRUE}
+ggplot()
+```
+```{r ex.gg.3.4-hint-1}
+ggplot(data = mpg,
+```
+```{r ex.gg.3.4-hint-2}
+ggplot(data = mpg, aes(x = displ, y = hwy)) +
+```
+```{r ex.gg.3.4-hint-3}
+ggplot(data = mpg, aes(x = displ, y = hwy)) +
+       geom_point()
+```
+```{r ex.gg.3.4-hint-4}
+ggplot(data = mpg, aes(x = displ, y = hwy)) +
+        geom_point() + geom_smooth(method="lm")
+```
+```{r ex.gg.3.4-solution}
+ggplot(data = mpg, aes(x = displ, y = hwy)) +
+        geom_point() + geom_smooth(method="lm") + facet_wrap(~cyl)
+```
+
+**E.** Plot side-by-side bar plots of `drv` (drive wheel) variable for each category of `cyl` and answer 3 questions below:
+```{r, ex.gg.3.5, exercise=TRUE}
+ggplot()
+```
+```{r ex.gg.3.5-hint-1}
+ggplot(data = mpg,
+```
+```{r ex.gg.3.5-hint-2}
+ggplot(data = mpg, aes(x = cyl, fill = drv)) +
+```
+```{r ex.gg.3.5-hint-3}
+ggplot(data = mpg, aes(x = cyl, fill = drv)) +
+       geom_bar()
+```
+```{r ex.gg.3.5-solution}
+ggplot(data = mpg, aes(x = cyl, fill = drv)) +
+        geom_bar(position="dodge")
+```
+```{r ex.gg.3.5-question, echo=FALSE}
+quiz(caption = "",
+     question("In this data set approximately how many cars with 4 cylinders are 4wd?",
+              answer(sprintf("%s",58)),
+              answer(sprintf("%s",22), correct = TRUE),
+              answer(sprintf("%s",4)),
+              answer(sprintf("%s",31)),
+              random_answer_order = TRUE,
+              allow_retry = FALSE),
+     question("In this data set approximately how many cars with 5 cylinders are rear wheel drive?",
+              answer("22"),
+              answer("0", correct = TRUE),
+              answer("4"),
+              answer("12"),
+              random_answer_order = TRUE,
+              allow_retry = FALSE),
+     question("In this data set approximately how many cars with 8 cylinders are front wheel drive?",
+              answer("0"),
+              answer("1", correct = TRUE),
+              answer("21"),
+              answer("9"),
+              random_answer_order = TRUE,
+              allow_retry = FALSE) )
+     
+```
+
+
+
+

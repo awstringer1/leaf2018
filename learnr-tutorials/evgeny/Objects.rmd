@@ -1,0 +1,600 @@
+---
+title: "R Objects"
+output: learnr::tutorial
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+library(nycflights13)
+library(openintro)
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Introduction
+
+In R there are many different objects that are used for various problems
+and circumstances. In this tutorial we show the most relevant ones that will
+be very useful during the course. 
+
+Generally an object is a variable that stores some data. Depending on the
+data that we have we should use different objects. The most simple object is
+just a variable that stores a number, then we can extent this to a vector of numbers.
+We also describe very useful and general objects called lists and finish by 
+discussion of data frames that are special kind of lists and used most frequently
+in data analysis.
+
+## Atomic Vectors
+
+R lets you save data by storing it inside an R object.
+What is an object? Just a name that you can use to call up stored data.
+
+For example let's create a variable `x` and store 1 in it:
+```{r echo=TRUE, eval=TRUE}
+x <- 1
+x
+```
+The symbol `<-` means assignment of 1 to `x`. To see what data any variable stores
+just type the name of the variable (`x` in our case) and press enter (for now please ignore `[1]` at the beginning of the output) . 
+
+In many cases we want to group some values of data together in one object (called a vector),
+we can easily do that in R using function c:
+```{r echo=TRUE, eval=TRUE}
+die <- c(1,2,3,4,5,6)
+die
+```
+Now the object `die` contains 6 values. We can check whether an object is a vector or not
+using `is.vector` function:
+```{r echo=TRUE, eval=TRUE}
+is.vector(die)
+```
+For an object that is a vector it is frequently useful to know how many elements are in that vector,
+we can get it using `length` function:
+```{r echo=TRUE, eval=TRUE}
+length(die)
+```
+Note that when we store only one number to a variable, R considers it as a vector
+of length 1:
+```{r echo=TRUE, eval=TRUE}
+x <- 1
+is.vector(x); length(x)
+```
+To access a value of a vector at particular position we use `[]`, with value
+of the position inside the brackets. Here is an example, we extract the third element
+of a vector:
+```{r echo=TRUE, eval=TRUE}
+myvec <- c(5,3,6,1,4,2)
+myvec[3]
+```
+We can input a vector of positions to extract more than one value from a vector:
+```{r echo=TRUE, eval=TRUE}
+myvec <- c(5,3,6,1,4,2)
+myvec[c(1,3,5)]
+```
+
+### Exercises
+
+A. Save number 2 to variable `y`, add 3 to `y` and see the result:
+```{r, ex1.1, exercise=TRUE}
+y <-
+```
+```{r ex1.1-hint-1}
+y <- 3
+```
+```{r ex1.1-solution}
+y <- 3
+y + 2
+```
+
+B. Save a vector with the name `myvec` that contains the values 1,3,2,4. Check
+whether it is a vector and find the length of it:
+```{r ex1.2, exercise=TRUE}
+myvec <-
+```
+```{r ex1.2-hint-1}
+myvec <- c(1,3,2,4)
+```
+```{r ex1.2-solution}
+myvec <- c(1,3,2,4)
+is.vector(myvec); length(myvec)
+```
+
+C. Consider the following vector:
+```{r echo=FALSE, eval=TRUE, cache=TRUE}
+set.seed(Sys.time())
+x <- sample(1:10,5,replace=FALSE)
+x
+```
+Use R to answer the following questions:
+```{r ex1.3, exercise=TRUE}
+```
+```{r ex1.3-question, echo=FALSE}
+l <- length(x)
+quiz(caption = "",
+     question("What is the length of the given vector?",
+              answer(sprintf("%s",l+1)),
+              answer(sprintf("%s",l), correct = TRUE),
+              answer(sprintf("%s",l-1)),
+              answer(sprintf("%s",l-2)),
+              random_answer_order = TRUE,
+              allow_retry = FALSE
+     ),
+     question("What is the value the vector stores on SECOND position?",
+              answer(sprintf("%s",x[2]),correct=TRUE),
+              answer(sprintf("%s",x[1])),
+              answer(sprintf("%s",x[3])),
+              answer(sprintf("%s",x[4])),
+              random_answer_order = TRUE,
+              allow_retry = FALSE
+     )
+)
+```
+
+## Type of vectors
+
+Each atomic vector can only store one type of data. You can save different types of data in R by using
+different types of atomic vectors.
+R recognizes six basic types of atomic vectors: doubles, integers, characters, logicals, complex, and raw.
+
+We will not consider complex and raw types here.
+In previous section where we saved some numbers to a vector, R automatically
+stored them as doubles (or just numeric) type.
+For integer vectors we must include a capital L with input, and for character vectors we have to surround an input by
+quotation marks:
+```{r echo=TRUE, cache=TRUE}
+num <- c(2,3)
+int <- c(2L, 3L)
+coin <- c("Tail","Head")
+num
+int
+coin
+```
+Now object `int` is a vector that contains two integers (2 and 3) while
+the object `coin` is a vector of two characters/words ("Tail" and "Head").
+We can use `typeof` function to get the type of a vector:
+```{r echo=TRUE, cache=TRUE}
+typeof(num); typeof(int); typeof(coin)
+```
+The last type that will discuss is logicals. Logical vectors store TRUEs and FALSEs, R’s form of Boolean data. 
+TRUE or FALSE in capital letters (without quotation marks) will be treated as logical data:
+```{r echo=TRUE, eval=TRUE}
+logic <- c(TRUE,FALSE,FALSE,TRUE)
+logic
+```
+Logicals are very helpful for comparisons, for example if we are given a vector
+of random numbers between 1 and 10 we can check which ones are greater than 5:
+```{r echo=TRUE, eval=TRUE, cache=TRUE}
+x <- c(6,1,4,8,4,6,7,3)
+comp <- x>5
+comp
+```
+Moreover R can consider a logical vector as a vector of 0s and 1s (corresponding
+to FALSEs and TRUEs respectively). So if we need the number of elements in vector `x` that
+are larger than 5, we can just sum all elements in vector `comp`:
+```{r echo=TRUE, eval=TRUE}
+sum(comp)
+```
+
+### Exercises
+
+A. Create a vector `int` that stores integers 3,5,1,2, and check the type of this vector:
+```{r ex2.1, exercise=TRUE}
+int <-
+```
+```{r ex2.1-hint-1}
+int <- c(3L,5L,1L,2L)
+```
+```{r ex2.1-solution}
+int <- c(3L,5L,1L,2L)
+typeof(int)
+```
+
+B. Given the following vector:
+```{r echo=FALSE, eval=TRUE, cache=TRUE}
+set.seed(Sys.time())
+x <- sample(1:10,7,replace=FALSE)
+x
+```
+```{r ex2.2, exercise=TRUE}
+```
+```{r ex2.2-question, echo=FALSE}
+x1 <- sum(x<4)
+x2 <- sum(x>6)
+quiz(caption = "Using R find the following:",
+     question("How many elements in the vector are smaller than 4?",
+              answer(sprintf("%s",x1+1)),
+              answer(sprintf("%s",x1), correct = TRUE),
+              answer(sprintf("%s",x1+2)),
+              answer(sprintf("%s",x1+3)),
+              random_answer_order = TRUE,
+              allow_retry = FALSE
+     ),
+     question("How many elements in the vector are greater than 6?",
+              answer(sprintf("%s",x2),correct=TRUE),
+              answer(sprintf("%s",x2+1)),
+              answer(sprintf("%s",x2+2)),
+              answer(sprintf("%s",x2+3)),
+              random_answer_order = TRUE,
+              allow_retry = FALSE
+     )
+)
+```
+
+C. We can assign names to vector elements using `names` function, for example:
+```{r eval=TRUE, echo=TRUE}
+x <- c(0,1)
+name <- c("zero","one")
+names(x) <- name
+x
+```
+Following the example construct a vector `die` with values 1,2,3,4,5 and 6 with 
+names "one","two’,,"six" and see the resulting vector.
+```{r ex2.3, exercise=TRUE}
+die <- c(
+```
+```{r ex2.3-hint-1}
+die <- c(1,2,3,4,5,6)
+```
+```{r ex2.3-hint-2}
+die <- c(1,2,3,4,5,6)
+name <- c("one","two","three","four","five","six")
+```
+```{r ex2.3-solution}
+die <- c(1,2,3,4,5,6)
+name <- c("one","two","three","four","five","six")
+names(die) <- name
+die
+```
+
+## Matrices
+
+Matrices are just atomic vectors that are organized into rectangular array.
+Similar to vectors, elements in a matrix must be of the same type (doubles, integers, and so on.).
+Number of rows `nrow` and number of columns `ncol` characterize matrices. As an example
+consider the following matrix:
+```{r echo=TRUE, eval=TRUE}
+mat <- matrix(c(1,2,3,4,5,6),nrow=2)
+mat
+```
+Note that we do not have to specify the number of columns since the length of vector (which is 6)
+implies that the matrix must have 3 columns. Another important observation is that the matrix is
+'filled' column by column (by default), if we need by rows we have to add `byrow=TRUE`:
+```{r echo=TRUE, eval=TRUE, cache=TRUE}
+mat <- matrix(c(1,2,3,4,5,6),nrow=2, byrow=TRUE)
+mat
+```
+Using functions `rownames` and `colnames` we can give names to rows and columns of a matrix
+respectively:
+```{r echo=TRUE, eval=TRUE, cache=TRUE}
+rownames(mat) <- c("R1","R2") 
+colnames(mat) <- c("C1","C2","C3")
+mat
+```
+Sometimes it might be of interest to find the dimension of a matrix, we can 
+easily get it with `dim` function:
+```{r echo=TRUE, eval=TRUE}
+dim(mat)
+```
+The first number represents number of rows, second, number of columns.
+
+To access some particular entries in a matrix we use a pair of square brackets `[,]` with the
+first and second numbers indicating position of row and position of column respectively:
+```{r echo=TRUE, eval=TRUE}
+mat[1,2]; mat[2,3]
+```
+Note that if a matrix has column and row names we can input specific names instead of numbers,
+we get exactly the same results with the next code:
+```{r echo=TRUE, eval=TRUE}
+mat["R1","C2"]; mat["R2","C3"]
+```
+We can extract entire row if we leave the second entry in squared brackets empty,
+similarly we get the entire column by leaving the first entry blank:
+```{r echo=TRUE, eval=TRUE}
+mat[2,]; mat[,3]
+```
+In the first example we get second row (as a vector) followed by a third column (also as a vector).
+Using similar `c()` function we can extract several rows and/or columns. For
+example the next code retrieves two entries from the second row and from columns 1 and 3:
+```{r echo=TRUE, eval=TRUE}
+mat[2,c(1,3)]
+``` 
+
+### Exercises
+
+A. Create a 3 by 3 matrix `mat` with 5s on the diagonal and 0s everywhere else and see the resulting matrix:
+```{r ex4.1, exercise=TRUE} 
+mat <- 
+```
+```{r ex4.1-hint-1} 
+mat <- matrix(c(5,0,0,0,5,0,0,0,5))
+```
+```{r ex4.1-solution} 
+mat <- matrix(c(5,0,0,0,5,0,0,0,5),ncol=3)
+mat
+```
+
+B. Given the following matrix called `mymat':
+```{r echo=FALSE, eval=TRUE, cache=TRUE}
+set.seed(Sys.time())
+mymat <- matrix(sample(1:20,10,replace=FALSE),ncol=5)
+mymat
+```
+```{r ex4.2, exercise=TRUE}
+mymat
+```
+```{r ex4.2-question, echo=FALSE}
+quiz(caption = "Using R find the following:",
+     question("What is the dimension of 'mymat'?",
+              answer("(1,6)"),
+              answer("(2,5)", correct = TRUE),
+              answer("(3,4)"),
+              answer("(2,6)"),
+              random_answer_order = TRUE,
+              allow_retry = FALSE
+     ),
+     question("What is the value of 'mymat' on second row and third column?",
+              answer(sprintf("%s",mymat[2,3]),correct=TRUE),
+              answer(sprintf("%s",mymat[2,4])),
+              answer(sprintf("%s",mymat[1,3])),
+              answer(sprintf("%s",mymat[1,2])),
+              random_answer_order = TRUE,
+              allow_retry = FALSE
+     )
+)
+```
+
+## Lists
+
+Lists are like atomic vectors because they group data into a one-dimensional set.
+Unlike vectors, lists can store different types of variables and different objects.
+Lists group together R objects, such as atomic vectors, matrices and other lists.
+For example, you can make a list that contains a numeric vector of length 6 in its first element, a
+character vector of length 1 in its second element, a 2 by 3 matrix in its third element and a list of length 2 in its fourth element.
+```{r eval=TRUE, echo=TRUE}
+mylist <- list( c(1,2,3,4,5,6), "Red", matrix(c(1,2,3,4,5,6),ncol=3), list(TRUE,1))
+mylist
+```
+As with atomic vectors we can use function `names` to give names for each element in the list:
+```{r eval=TRUE, echo=TRUE,cache=TRUE}
+names(mylist) <- c("Vector","Color","Matrix","List")
+mylist
+```
+To access a particular element in the list we can use double square brackets `[[]]` with position of the 
+element inside the brackets:
+```{r eval=TRUE, echo=TRUE}
+mylist[[1]]; mylist[[2]]
+```
+If entries in the array have names, we can use `$` sign followed by the name of a variable (no quotations) instead of square brackets:
+```{r eval=TRUE, echo=TRUE}
+mylist$Vector; mylist$Color
+```
+Once we have a variable from the list that we are interested in, we can apply usual rules for manipulating this object. For example
+if we need to extract an entry on first row and third column of a matrix which is in `mylist` we can do the following:
+```{r eval=TRUE, echo=TRUE}
+mylist[[3]][1,3]
+``` 
+
+### Exercises
+
+A. Create a list called `list_1` that has 3 elements: logical vector (TRUE,FALSE), character "GREEN" and numerical vector (3,2,1).
+Next give name for each element: "Logic", "Color", "Vector" and see the result:
+```{r ex5.1, exercise=TRUE} 
+list_1 <- 
+```
+```{r ex5.1-hint-1} 
+list_1 <- list(c(TRUE,FALSE),
+```
+```{r ex5.1-hint-2} 
+list_1 <- list(c(TRUE,FALSE), "GREEN",
+```
+```{r ex5.1-hint-3} 
+list_1 <- list(c(TRUE,FALSE), "GREEN", c(3,2,1))
+```
+```{r ex5.1-hint-4} 
+list_1 <- list(c(TRUE,FALSE), "GREEN", c(3,2,1))
+names(list_1) <- c("Logic",
+```
+```{r ex5.1-hint-5} 
+list_1 <- list(c(TRUE,FALSE), "GREEN", c(3,2,1))
+names(list_1) <- c("Logic","Color",
+```
+```{r ex5.1-solution} 
+list_1 <- list(c(TRUE,FALSE), "GREEN", c(3,2,1))
+names(list_1) <- c("Logic","Color","Vector")
+list_1
+```
+
+B. Given the following list called `mylist':
+```{r echo=FALSE, eval=TRUE, cache=TRUE}
+set.seed(Sys.time())
+mylist <- list(NA)
+mylist[[1]] <- matrix(sample(1:20,10,replace=FALSE),ncol=5)
+mylist[[2]] <- sample(1:20,4,replace=FALSE)
+names(mylist) <- c("Mat","Vec")
+mylist
+```
+```{r ex5.2, exercise=TRUE}
+mylist
+```
+```{r ex5.2-question, echo=FALSE}
+quiz(caption = "Using R find the following:",
+     question("What is dimension of a matrix 'Mat' in this list?",
+              answer("(1,6)"),
+              answer("(2,5)", correct = TRUE),
+              answer("(3,4)"),
+              answer("(2,6)"),
+              random_answer_order = TRUE,
+              allow_retry = FALSE
+     ),
+     question("What is the entry of matrix 'Mat' on second row and fifth column?",
+              answer(sprintf("%s",mylist[[1]][2,5]),correct=TRUE),
+              answer(sprintf("%s",mylist[[1]][2,3])),
+              answer(sprintf("%s",mylist[[1]][1,3])),
+              answer(sprintf("%s",mylist[[1]][1,4])),
+              random_answer_order = TRUE,
+              allow_retry = FALSE
+     ),
+     question("What is the length of a vector 'Vec' in this list?",
+              answer("5"),
+              answer("4", correct = TRUE),
+              answer("3"),
+              answer("6"),
+              random_answer_order = TRUE,
+              allow_retry = FALSE
+     ),
+    question("What is the value on the third position of a vector `Vec'?",
+              answer(sprintf("%s",mylist[[2]][3]),correct=TRUE),
+              answer(sprintf("%s",mylist[[2]][4])),
+              answer(sprintf("%s",mylist[[2]][2])),
+              answer(sprintf("%s",mylist[[2]][1])),
+              random_answer_order = TRUE,
+              allow_retry = FALSE
+     )
+)
+```
+
+## Data Frames
+
+Data frames are probably the most useful data structure that is used in data analysis. A data frame is a list
+of atomic vectors of the same length (but of different types). It is equivalent to the Excel spreadsheet with
+columns and rows correspond to variables and observations respectively. Note that each column (or vector in our case) of a data frame
+can contain a different type of data but within a column every cell must be of the same type. Lets create our first
+data frame using function `data.frame` consisting of 4 observations and two variables. First variable is a student number, second is a student's name:
+```{r echo=TRUE, eval=TRUE}
+num <- c(1,2,3,4)
+name <- c("Nadia","Shiyi","Yizhe","Wei")
+mydat <- data.frame(student_num = num, student_name = name)
+mydat
+```
+Note that each vector turned into a column and that the names of the variables are `student_num` and `student_name`. These
+two variables (vectors) have the same number of observations (which is 4) but are of different types, one is numeric
+another is a factor (by default R changes characters to factors). We can check whether an object is a data frame using 
+`is.data.frame` function:
+```{r eval=T,echo=T}
+is.data.frame(mydat)
+```
+Another useful function is `dim` which for a data frame outputs two numbers, the number of rows and number
+of columns:
+```{r eval=T,echo=T}
+dim(mydat)
+```
+Usually we will upload data sets to R from some
+external sources, however R has some build-in data frames for analysis. For example data set `mtcars` contains
+performances of 32 automobiles, to see the first 6 rows of the data frame we use function `head`:
+```{r echo=TRUE, eval=TRUE}
+head(mtcars)
+```
+To extract a variable from a data frame we can use squared brackets `[,]` where second number corresponds
+to position of the column in the data frame (similar to matrices) or we can use `$` sign followed by the name
+of the variable (as with lists). For example lets extract `hp` variable from the `mtcars` data frame and 
+find its mean using `mean` function:
+```{r echo=TRUE, eval=TRUE}
+hp <- mtcars[,4]; mean(hp)
+hp <- mtcars$hp;  mean(hp)
+``` 
+If we need for example the value of `hp` variable only from the second row, again we can either use
+square brackets with the first number equals to 2 or first use `$` sign to extract the vector and then 
+get the value on the second position:
+```{r echo=TRUE, eval=TRUE}
+mtcars[2,4]; mtcars$hp[2]
+```
+Generally the use of `[,]` is very versatile and with it we can extract any combinations of rows (observations)
+and columns (variables). Frequently we need to analyze (or extract) rows that correspond to some logical criteria,
+for example, suppose we need to extract all rows (and all columns) from `mtcars` for which `hp` is greater than 200, we can easily
+do that with the combination of `[,]` and `$`:
+```{r echo=TRUE, eval=TRUE}
+mtcars[mtcars$hp>200,]
+```
+Note that we left second number after comma in square brackets blank since we need all variables. Now lets
+extract all observations for which `mpg` is greater than 16 AND `cyl` is 8:
+```{r echo=TRUE, eval=TRUE}
+mtcars[mtcars$mpg>16 & mtcars$cyl==8,]
+```
+Two important observations from the last example are that logical “AND” is represented by `&` in R and for
+checking equality in logical statements we have to enter double equal sign `==`. If instead of “AND” statement
+we had “OR”, the code would remain the same except that `&` must be changed to `|`. 
+
+### Exercises
+
+A. Create a data frame called `mydata` that has 3 variables: Die = (1,2,3,4,5,6), Color = ("red","red","green","green","blue","blue")
+and Logic = (TRUE,TRUE,TRUE,TRUE,FALSE,FALSE). Check whether it is a data frame, find its dimension and see the result:
+```{r ex6.1, exercise=TRUE} 
+mydata <- data.frame( 
+```
+```{r ex6.1-hint-1} 
+mydata <- data.frame(Die = c(1:6),
+```
+```{r ex6.1-hint-2} 
+mydata <- data.frame(Die = c(1:6), Color = c("red","red","green","green","blue","blue"), 
+```
+```{r ex6.1-hint-3} 
+mydata <- data.frame(Die = c(1:6), Color = c("red","red","green","green","blue","blue"), Logic = c(TRUE,TRUE,TRUE,TRUE,FALSE,FALSE) )
+```
+```{r ex6.1-hint-4} 
+mydata <- data.frame(Die = c(1:6), Color = c("red","red","green","green","blue","blue"), Logic = c(TRUE,TRUE,TRUE,TRUE,FALSE,FALSE) )
+is.data.frame(mydata)
+```
+```{r ex6.1-solution} 
+mydata <- data.frame(Die = c(1:6), Color = c("red","red","green","green","blue","blue"), Logic = c(TRUE,TRUE,TRUE,TRUE,FALSE,FALSE) )
+is.data.frame(mydata)
+dim(mydata)
+mydata
+```
+
+B. Given the following data frame called `data':
+```{r echo=FALSE, eval=TRUE, cache=TRUE}
+set.seed(Sys.time())
+vec1 <- sample(1:100,10,replace=FALSE)
+vec2 <- sample(1:20,10,replace=FALSE)
+vec3 <- c("a","b",sample(c("a","b"),8,replace=TRUE))
+
+data <- data.frame( Var_1=vec1, Var_2=vec2, Var_3=vec3)
+data
+```
+```{r ex6.2, exercise=TRUE}
+data
+```
+```{r ex6.2-hint-1}
+sum(data$Var_3=="a")
+```
+```{r ex6.2-hint-2}
+mean(data[data$Var_3=="b",2])
+```
+
+```{r ex6.2-question, echo=FALSE}
+quiz(caption = "Using R find the following:",
+     question("Find the mean of Variable 1?",
+              answer(sprintf("%s",round(mean(data$Var_1),2)),correct=TRUE),
+              answer(sprintf("%s",round(mean(data$Var_2),2))),
+              answer(sprintf("%s",round(mean(data$Var_1)+6,2))),
+              answer(sprintf("%s",round(mean(data$Var_1)-2,2))),
+              random_answer_order = TRUE,
+              allow_retry = FALSE
+     ),
+     question("What is the value on fifth row and second column of this data frame?",
+              answer(sprintf("%s",data[5,2]),correct=TRUE),
+              answer(sprintf("%s",data[4,2])),
+              answer(sprintf("%s",data[6,2])),
+              answer(sprintf("%s",data[7,2])),
+              random_answer_order = TRUE,
+              allow_retry = FALSE
+     ),
+     question("How many rows are there with 'a' in Variable 3?",
+              answer(sprintf("%s",sum(data$Var_3=="a")),correct=TRUE),
+              answer(sprintf("%s",sum(data$Var_3=="a")-1)),
+              answer(sprintf("%s",sum(data$Var_3=="a")+1)),
+              answer(sprintf("%s",sum(data$Var_3=="a")+2)),
+              random_answer_order = TRUE,
+              allow_retry = FALSE
+     ),
+    question("What is the mean of Variable 2 when Variable 3 is 'b'?",
+              answer(sprintf("%s",round(mean(data[data$Var_3=="b",2]),2)),correct=TRUE),
+              answer(sprintf("%s",round(mean(data[data$Var_3=="b",1]),2))),
+              answer(sprintf("%s",round(mean(data[data$Var_3=="b",2])+2,2))),
+              answer(sprintf("%s",round(mean(data[data$Var_3=="b",2])-3,2))),
+              random_answer_order = TRUE,
+              allow_retry = FALSE
+     )
+)
+```
