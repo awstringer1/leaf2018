@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+
+<meta name="progressive" content="false" />
+<meta name="allow-skip" content="false" />
+
+<title>R Functions</title>
+
+
+<!-- highlightjs -->
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs && document.readyState && document.readyState === "complete") {
+   window.setTimeout(function() {
+      hljs.initHighlighting();
+   }, 0);
+}
+</script>
+
+
+
+</head>
+
+<body>
+
+
+
+<div class="pageContent band">
+<div class="bandContent page">
+
+<div class="topics">
+
+<div id="section-r-functions" class="section level2">
+<h2>R Functions:</h2>
+<p>Functions are blocks of R code that are stored under specific names. They are built to perform different operations that are frequently used. Instead of writing the same piece of code every time it is very convenient to do it once, store it as a function and then call it many times in the main body of the R code. There are many useful functions that are already built-in R (in various packages) or we can write our own. We first show the general structure of a function, give an example how to build one and then show some very helpful and frequently used build-in R functions.</p>
+<p>Generally to create a function we can use the following template:</p>
+<pre class="r"><code>my_function &lt;- function(arg1,arg2)
+{
+  ......................
+  BODY OF THE FUNCTION
+  ......................
+
+  return( result )
+}</code></pre>
+<p>Here <code>my_function</code>, <code>arg1</code>, <code>arg2</code> and <code>result</code> are arbitrary names for the name of the function, arguments and the R object that the function returns respectively. Arguments are inputs to a function (can be more than 2 separated by commas) and they are any R objects, e.g. data frames, lists, vectors, matrices and so on. It is possible that a function does not have any arguments then we simply put <code>function()</code> with nothing inside the parentheses. Generally a function performs some operations on arguments and then returns the resulting variable (again can be any R object). However it is not always true, it is possible that a function produces a graph for example, then the R code to plot the graph will be contained inside the body of a function while the function returns nothing. So in that case we ignore <code>return(result)</code> part.</p>
+<p>Now lets look at one example. Suppose we need to build a function (call it <code>check_vec</code>) that has two inputs (arguments), one is a vector <code>vec</code> the other one is some constant <code>const</code>. The function should return 3 numbers: length of the vector, sum of the entries of the vector and number of elements of <code>vec</code> that are larger than <code>const</code>. Here is the R code for this function:</p>
+<pre class="r"><code>check_vec &lt;- function(vec,const)
+{
+  len &lt;- length( vec )
+  sum_entry &lt;- sum( vec )
+  above &lt;- sum( vec &gt; const )
+  result &lt;- c(len,sum_entry,above)
+  names(result) &lt;- c(&quot;length&quot;,&quot;sum&quot;,&quot;num_above&quot;)
+  return( result )
+}  </code></pre>
+<p>So the function returns a vector of length 3 with appropriate names for each entry. It is worth noting that <code>length</code> and <code>sum</code> are built-in R functions, so we use functions inside our function. Now we input a vector and a constant 1 to <code>check_vec</code> function:</p>
+<pre class="r"><code>my_vec &lt;- c(4,1,-4,9,0,1,10,2)
+check_vec(my_vec,1)</code></pre>
+<pre><code>##    length       sum num_above 
+##         8        23         4</code></pre>
+<p>To use a function we just type its name and enter arguments in round brackets. The function returns what we wanted.</p>
+<p>Note the order of the inputted arguments. <code>my_vec</code> is on the first position (because we know that the first argument is <code>vec</code>) followed by a constant. If we switch the two, we get completely different output:</p>
+<pre class="r"><code>check_vec(1,my_vec)</code></pre>
+<pre><code>##    length       sum num_above 
+##         1         1         2</code></pre>
+<p>Now <code>check_vec()</code> function considers 1 as <code>vec</code> and <code>my_vec</code> as <code>const</code>. So the order of arguments is essential and in more complicated functions with tens of arguments we can easily enter variables to wrong arguments. To avoid that, we can be more specific when entering variables, by adding arguments’ names followed by equal signs before the variables, for example:</p>
+<pre class="r"><code>check_vec(const=1,vec=my_vec)</code></pre>
+<pre><code>##    length       sum num_above 
+##         8        23         4</code></pre>
+<p>Now we get back the original result even though the order is wrong.</p>
+<p>Next suppose we enter variable for <code>vec</code> but forget to input <code>const</code>:</p>
+<pre class="r"><code>check_vec(my_vec)</code></pre>
+<p>Then an error message will appear because <code>const</code> value was not supplied. Frequently it is convenient to have default parameters for some arguments. Lets update our function so that by default <code>const</code> would be 1:</p>
+<pre class="r"><code>check_vec &lt;- function(vec,const=1)
+{
+  len &lt;- length( vec )
+  sum_entry &lt;- sum( vec )
+  above &lt;- sum( vec &gt; const )
+  result &lt;- c(len,sum_entry,above)
+  names(result) &lt;- c(&quot;length&quot;,&quot;sum&quot;,&quot;num_above&quot;)
+  return( result )
+}  </code></pre>
+<p>The only difference is that we put <code>const=1</code> in the first line. Now if we enter <code>my_vec</code> but forget about <code>const</code> there is no error:</p>
+<pre class="r"><code>check_vec(my_vec)</code></pre>
+<pre><code>##    length       sum num_above 
+##         8        23         4</code></pre>
+<p>The function is evaluated with default value for <code>const</code>, of course if we type some number for this argument it will overwrite the default value:</p>
+<pre class="r"><code>check_vec(my_vec,-2)</code></pre>
+<pre><code>##    length       sum num_above 
+##         8        23         7</code></pre>
+<div id="section-some-useful-built-in-r-functions" class="section level3">
+<h3>Some useful built-in R functions</h3>
+<p>We are already familiar with functions <code>sum()</code>, <code>length()</code>, <code>dim()</code>, <code>mean()</code>, <code>var()</code>, <code>sd()</code>. Remember that when we use <code>mean()</code> function with removed missing values we add <code>na.rm=TRUE</code> in the brackets. We can now see that <code>na.rm</code> is just an argument of the <code>mean()</code> function which by default is <code>FALSE</code>.</p>
+<p>If we have a number (or vector) with many decimal digits we can use <code>round()</code> function to round it. This function has two arguments: the number itself and the number of decimal places to use (by default 0):</p>
+<pre class="r"><code>round(5.3585642)</code></pre>
+<pre><code>## [1] 5</code></pre>
+<pre class="r"><code>round(5.3585642,2)</code></pre>
+<pre><code>## [1] 5.36</code></pre>
+<p>In statistics and probability we often are interested in simulating some random phenomena. For example flipping a coin many times or tossing a dice. <code>sample()</code> function is very useful for these problems. First lets get the arguments of this function, if we just type function’s name (no brackets) R outputs its arguments and “body”:</p>
+<pre class="r"><code>sample</code></pre>
+<pre><code>## function (x, size, replace = FALSE, prob = NULL) 
+## {
+##     if (length(x) == 1L &amp;&amp; is.numeric(x) &amp;&amp; is.finite(x) &amp;&amp; x &gt;= 
+##         1) {
+##         if (missing(size)) 
+##             size &lt;- x
+##         sample.int(x, size, replace, prob)
+##     }
+##     else {
+##         if (missing(size)) 
+##             size &lt;- length(x)
+##         x[sample.int(length(x), size, replace, prob)]
+##     }
+## }
+## &lt;bytecode: 0x7fee39ba4840&gt;
+## &lt;environment: namespace:base&gt;</code></pre>
+<p>We see that this function has 4 arguments: <code>x</code>,<code>size</code>,<code>replace</code> (<code>FALSE</code> by default) and <code>prob</code> (<code>NULL</code> by default). We will ignore <code>prob</code> argument for now. Usually <code>x</code> is a vector of integers or characters that we want to sample from. <code>size</code> is a number of random samples from <code>x</code>. We can imagine balls in an urn with the number of balls and their labels correspond to <code>length(x)</code> and values of <code>x</code> respectively. <code>size</code> argument represents the number of ball draws from the urn. Now there are two ways we can sample. First one, is to randomly select a ball from the urn, record its label and put it back (<code>replace=TRUE</code>). In this manner we can sample infinite number of balls (with many ties of course). The second way is to randomly sample a ball, record its label and put it aside (<code>replace=FALSE</code>) and continue doing that for other balls. Note that we cannot sample the same ball twice and the sample size (<code>size</code> argument) must be less than or equal to the total number of balls (<code>length(x)</code>). Therefore it is crucial when using <code>sample</code> function to understand whether the sampled elements from <code>x</code> have to be replaced or not.</p>
+<p>Now lets look at some examples. Suppose we want to flip a fair coin 10 times, and record whether we get head (“H”) or tail (“T”) each time:</p>
+<pre class="r"><code>sample(c(&quot;H&quot;,&quot;T&quot;),10,replace=TRUE)</code></pre>
+<pre><code>##  [1] &quot;T&quot; &quot;H&quot; &quot;T&quot; &quot;T&quot; &quot;H&quot; &quot;H&quot; &quot;T&quot; &quot;T&quot; &quot;T&quot; &quot;H&quot;</code></pre>
+<p>Note that we have to put <code>replace=TRUE</code> since each flip is independent of the previous one. Be default R samples “H” and “T” uniformly (fair coin), if we suspect that the coin is not balanced and lands heads with probability 0.6 (for example) instead of 0.5, then we can add <code>prob</code> argument with corresponding probabilities for heads and tails:</p>
+<pre class="r"><code>sample(c(&quot;H&quot;,&quot;T&quot;),10,replace=TRUE,prob=c(0.6,0.4))</code></pre>
+<pre><code>##  [1] &quot;H&quot; &quot;H&quot; &quot;H&quot; &quot;H&quot; &quot;T&quot; &quot;T&quot; &quot;H&quot; &quot;T&quot; &quot;H&quot; &quot;T&quot;</code></pre>
+<p>Next we simulate a fair die tossing, the outcome of each toss is either 1,2,3,4,5 or 6. Suppose we do it 3 times:</p>
+<pre class="r"><code>sample(1:6,3,replace=TRUE)</code></pre>
+<pre><code>## [1] 6 6 2</code></pre>
+<p>Again we need to indicate <code>replace=TRUE</code>, also note that <code>1:6</code> is a shortcut to <code>c(1,2,3,4,5,6)</code>.</p>
+<p>Lastly we can compose functions, for example we may find rounded mean (to 2 decimal places) of the die tossing outcome by combining <code>round()</code> <code>mean()</code> and <code>sample()</code>functions:</p>
+<pre class="r"><code>round( mean( sample(1:6,3,replace=TRUE) ), 2 )</code></pre>
+<pre><code>## [1] 3.67</code></pre>
+<p>Observe that operations flow from inner function to outer, so first toss a die 3 times, then find the mean and finally round to 2 decimal places.</p>
+</div>
+<div id="section-exercises" class="section level3">
+<h3>Exercises</h3>
+<p><strong>A.</strong> Create a function <code>sum_vec</code> that has arguments: vector <code>x</code>, integer <code>d</code> and logical <code>na.rm</code>. Make <code>0</code> and <code>FALSE</code> defaults for <code>d</code> and <code>na.rm</code> respectively. The function should return a vector of 3 numbers: mean, standard deviation and number of missing values of vector <code>x</code>. The results for mean and standard deviation must be rounded to <code>d</code> decimal places and if <code>na.rm</code> is <code>TRUE</code> then the function must remove missing values for mean and standard deviation calculations.</p>
+<strong>B.</strong> Evaluate the function for <code>x=c(4,6,1,NA,1,5,NA)</code> with <code>d</code> being equal to 2 and <code>na.rm</code> either <code>TRUE</code> or <code>FALSE</code>:
+<div class="tutorial-exercise" data-label="ex.fun.1" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="14">
+<pre class="text"><code>sum_vec &lt;- function()</code></pre>
+<script type="application/json" data-opts-chunk="1">{"fig.width":6.5,"fig.height":4,"fig.retina":2,"fig.align":"default","fig.keep":"high","fig.show":"asis","out.width":624,"warning":true,"error":false,"message":true,"exercise.df_print":"paged","exercise.checker":["function (label = NULL, user_code = NULL, solution_code = NULL, ","    check_code = NULL, envir_result = NULL, evaluate_result = NULL, ","    ..., debug = FALSE) ","{","    if (debug) {","        save_file_name <- sprintf(\"~/Downloads/CheckR/chunk-%s.rds\", ","            label)","        saveRDS(list(label = label, user_code = user_code, solution_code = solution_code, ","            check_code = check_code, envir = envir_result, evaluate_result = evaluate_result), ","            file = save_file_name)","    }","    if (is.null(envir_result)) {","        res <- pre_check(user_code, solution_code)","        if (failed(res)) {","            return(list(correct = FALSE, type = \"error\", location = \"prepend\", ","                message = res$message))","        }","        else {","            return(TRUE)","        }","    }","    if (!is.null(envir_result)) {","        res <- parse_check(user_code)","        if (!res$correct) {","            return(list(correct = FALSE, type = \"error\", location = \"prepend\", ","                message = res$message))","        }","    }","    parsed_check_code <- parse(text = check_code)","    res <- eval(parsed_check_code, envir = list(USER_CODE = user_code))","    if (res$action == \"ok\" && res$message == \"\") ","        res$message = \"Good\"","    feedback_type <- switch(res$action, pass = \"success\", fail = \"error\", ","        ok = \"warning\")","    final <- list(correct = (res$action == \"pass\"), message = res$message, ","        type = feedback_type, location = \"prepend\")","    final","}"]}</script>
+</div>
+<div class="tutorial-exercise-support" data-label="ex.fun.1-hint-1" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="0">
+<pre class="text"><code>sum_vec &lt;- function(x, d, na.rm)</code></pre>
+</div>
+<div class="tutorial-exercise-support" data-label="ex.fun.1-hint-2" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="0">
+<pre class="text"><code>sum_vec &lt;- function(x, d=0, na.rm=FALSE)</code></pre>
+</div>
+<div class="tutorial-exercise-support" data-label="ex.fun.1-hint-3" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="0">
+<pre class="text"><code>sum_vec &lt;- function(x, d=0, na.rm=FALSE)
+{
+  m &lt;- mean(x)
+}  </code></pre>
+</div>
+<div class="tutorial-exercise-support" data-label="ex.fun.1-hint-4" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="0">
+<pre class="text"><code>sum_vec &lt;- function(x, d=0, na.rm=FALSE)
+{
+  m &lt;- mean(x,na.rm=na.rm)
+  s &lt;- sd(x)
+}  </code></pre>
+</div>
+<div class="tutorial-exercise-support" data-label="ex.fun.1-hint-5" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="0">
+<pre class="text"><code>sum_vec &lt;- function(x, d=0, na.rm=FALSE)
+{
+  m &lt;- mean(x,na.rm=na.rm)
+  s &lt;- sd(x,na.rm=na.rm)
+}  </code></pre>
+</div>
+<div class="tutorial-exercise-support" data-label="ex.fun.1-hint-6" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="0">
+<pre class="text"><code>sum_vec &lt;- function(x, d=0, na.rm=FALSE)
+{
+  m &lt;- mean(x,na.rm=na.rm)
+  s &lt;- sd(x,na.rm=na.rm)
+  mis &lt;- sum(is.na(x))
+}  </code></pre>
+</div>
+<div class="tutorial-exercise-support" data-label="ex.fun.1-hint-7" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="0">
+<pre class="text"><code>sum_vec &lt;- function(x, d=0, na.rm=FALSE)
+{
+  m &lt;- mean(x,na.rm=na.rm)
+  s &lt;- sd(x,na.rm=na.rm)
+  mis &lt;- sum(is.na(x))
+  Result &lt;- c(round(m),round(s),mis)
+}  </code></pre>
+</div>
+<div class="tutorial-exercise-support" data-label="ex.fun.1-hint-8" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="0">
+<pre class="text"><code>sum_vec &lt;- function(x, d=0, na.rm=FALSE)
+{
+  m &lt;- mean(x,na.rm=na.rm)
+  s &lt;- sd(x,na.rm=na.rm)
+  mis &lt;- sum(is.na(x))
+  Result &lt;- c(round(m,d),round(s,d),mis)
+  names(Result) &lt;- c(&quot;Mean&quot;,&quot;SD&quot;,&quot;Miss&quot;)
+}  </code></pre>
+</div>
+<div class="tutorial-exercise-support" data-label="ex.fun.1-hint-9" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="0">
+<pre class="text"><code>sum_vec &lt;- function(x, d=0, na.rm=FALSE)
+{
+  m &lt;- mean(x,na.rm=na.rm)
+  s &lt;- sd(x,na.rm=na.rm)
+  mis &lt;- sum(is.na(x))
+  Result &lt;- c(round(m,d),round(s,d),mis)
+  names(Result) &lt;- c(&quot;Mean&quot;,&quot;SD&quot;,&quot;Miss&quot;)
+  return(Result)
+}  </code></pre>
+</div>
+<div class="tutorial-exercise-support" data-label="ex.fun.1-solution" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="0">
+<pre class="text"><code>sum_vec &lt;- function(x, d=0, na.rm=FALSE)
+{
+  m &lt;- mean(x,na.rm=na.rm)
+  s &lt;- sd(x,na.rm=na.rm)
+  mis &lt;- sum(is.na(x))
+  Result &lt;- c(round(m,d),round(s,d),mis)
+  names(Result) &lt;- c(&quot;Mean&quot;,&quot;SD&quot;,&quot;Miss&quot;)
+  return(Result)
+}  
+sum_vec(x=c(4,6,1,NA,1,5,NA),d=2,na.rm=TRUE)</code></pre>
+</div>
+<div class="tutorial-exercise-support" data-label="ex.fun.1-check" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="0">
+<pre class="text"><code>check_ex_fun_1(USER_CODE)</code></pre>
+</div>
+<p><strong>C.</strong> Consider the next function:</p>
+<pre class="r"><code>my_fun &lt;- function(size=2, replace=FALSE, d=2)
+{
+  sam &lt;- sample(1:6,size=size,replace=replace)
+  m   &lt;- round( mean(sam),d )
+  s   &lt;- round( sd(sam),d )
+  return( c(m,s) )
+}  </code></pre>
+<p>Answer the following questions:</p>
+<div class="panel panel-default">
+<div class="panel-heading tutorial-panel-heading"></div>
+<table class="table quiz-table">
+<tr>
+<td>
+
+<div id="htmlwidget-4425521bb0f3c1a97879" style="width:100%;height:auto;", class = "quiz html-widget">
+<div class="panel panel-default">
+<div class="panel-body quizArea">
+</div>
+</div>
+</div>
+
+<script type="application/json" data-for="htmlwidget-4425521bb0f3c1a97879">{"x":{"question":"What are possible outcomes of <code>my_fun()<\/code>? (select ALL that apply)","answers":[{"option":"2\n0","correct":false,"message":null},{"option":"5\n1.41","correct":true,"message":null},{"option":"2\n1.41","correct":true,"message":null},{"option":"Error Message","correct":false,"message":null}],"label":"ex.fun.2-question-1","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":false,"randomSortAnswers":true,"json":{"info":{"name":"","main":""},"questions":[{"q":"What are possible outcomes of <code>my_fun()<\/code>? (select ALL that apply)","a":[{"option":"2\n0","correct":false,"message":null},{"option":"5\n1.41","correct":true,"message":null},{"option":"2\n1.41","correct":true,"message":null},{"option":"Error Message","correct":false,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
+</td>
+</tr>
+<tr>
+<td>
+
+<div id="htmlwidget-00ab2c70b2a0ea34c30b" style="width:100%;height:auto;", class = "quiz html-widget">
+<div class="panel panel-default">
+<div class="panel-body quizArea">
+</div>
+</div>
+</div>
+
+<script type="application/json" data-for="htmlwidget-00ab2c70b2a0ea34c30b">{"x":{"question":"What are possible outcomes of <code>my_fun(replace=TRUE)<\/code>? (select ALL that apply)","answers":[{"option":"2\n0","correct":true,"message":null},{"option":"5\n1.41","correct":true,"message":null},{"option":"2.5\n0.71","correct":true,"message":null},{"option":"Error Message","correct":false,"message":null}],"label":"ex.fun.2-question-2","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":false,"randomSortAnswers":true,"json":{"info":{"name":"","main":""},"questions":[{"q":"What are possible outcomes of <code>my_fun(replace=TRUE)<\/code>? (select ALL that apply)","a":[{"option":"2\n0","correct":true,"message":null},{"option":"5\n1.41","correct":true,"message":null},{"option":"2.5\n0.71","correct":true,"message":null},{"option":"Error Message","correct":false,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
+</td>
+</tr>
+<tr>
+<td>
+
+<div id="htmlwidget-fb69f6a73edff01e60eb" style="width:100%;height:auto;", class = "quiz html-widget">
+<div class="panel panel-default">
+<div class="panel-body quizArea">
+</div>
+</div>
+</div>
+
+<script type="application/json" data-for="htmlwidget-fb69f6a73edff01e60eb">{"x":{"question":"What is the possible outcome of <code>my_fun(10)<\/code>?","answers":[{"option":"2\n0","correct":false,"message":null},{"option":"5\n1.41","correct":false,"message":null},{"option":"2\n1.41","correct":false,"message":null},{"option":"Error Message","correct":true,"message":null}],"label":"ex.fun.2-question-3","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":false,"randomSortAnswers":true,"json":{"info":{"name":"","main":""},"questions":[{"q":"What is the possible outcome of <code>my_fun(10)<\/code>?","a":[{"option":"2\n0","correct":false,"message":null},{"option":"5\n1.41","correct":false,"message":null},{"option":"2\n1.41","correct":false,"message":null},{"option":"Error Message","correct":true,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
+</td>
+</tr>
+<tr>
+<td>
+
+<div id="htmlwidget-ba47cca3ca278c207ed1" style="width:100%;height:auto;", class = "quiz html-widget">
+<div class="panel panel-default">
+<div class="panel-body quizArea">
+</div>
+</div>
+</div>
+
+<script type="application/json" data-for="htmlwidget-ba47cca3ca278c207ed1">{"x":{"question":"What is the possible outcome of <code>my_fun(10,replace=TRUE)<\/code>?","answers":[{"option":"6.1\n1.6","correct":false,"message":null},{"option":"2.6\nNA","correct":false,"message":null},{"option":"3.1\n1.6","correct":true,"message":null},{"option":"Error Message","correct":false,"message":null}],"label":"ex.fun.2-question-4","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":false,"randomSortAnswers":true,"json":{"info":{"name":"","main":""},"questions":[{"q":"What is the possible outcome of <code>my_fun(10,replace=TRUE)<\/code>?","a":[{"option":"6.1\n1.6","correct":false,"message":null},{"option":"2.6\nNA","correct":false,"message":null},{"option":"3.1\n1.6","correct":true,"message":null},{"option":"Error Message","correct":false,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
+</td>
+</tr>
+<tr>
+<td>
+
+<div id="htmlwidget-367734736843577cc02f" style="width:100%;height:auto;", class = "quiz html-widget">
+<div class="panel panel-default">
+<div class="panel-body quizArea">
+</div>
+</div>
+</div>
+
+<script type="application/json" data-for="htmlwidget-367734736843577cc02f">{"x":{"question":"What is the possible outcome of <code>my_fun(TRUE,10)<\/code>?","answers":[{"option":"5.2\n1.6","correct":false,"message":null},{"option":"2.6\nNA","correct":false,"message":null},{"option":"3.1\n1.6","correct":false,"message":null},{"option":"Error Message","correct":true,"message":null}],"label":"ex.fun.2-question-5","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":false,"randomSortAnswers":true,"json":{"info":{"name":"","main":""},"questions":[{"q":"What is the possible outcome of <code>my_fun(TRUE,10)<\/code>?","a":[{"option":"5.2\n1.6","correct":false,"message":null},{"option":"2.6\nNA","correct":false,"message":null},{"option":"3.1\n1.6","correct":false,"message":null},{"option":"Error Message","correct":true,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
+</td>
+</tr>
+</table>
+</div> 
+<script type="application/shiny-prerendered" data-context="server-start">
+library(learnr)
+library(checkr)
+library(tidyverse)
+library(nycflights13)
+library(openintro)
+library(DBI)
+library(RSQLite)
+knitr::opts_chunk$set(echo = FALSE)
+
+dbpath <- "/Users/alexstringer/phd/s18/leaf-ra/leaf2018/learnr-tutorials/evgeny/functions/"
+
+# Integration with checkr
+tutorial_options(exercise.checker = checkr::check_for_learnr)
+source(stringr::str_c(dbpath,"www/check_functions.R"))
+
+# Record student progress
+# Connect to the database
+
+function_db <- src_sqlite(stringr::str_c(dbpath,"functions.sqlite"),create=FALSE)
+
+tutorial_event_recorder <- function(tutorial_id, tutorial_version, user_id, 
+                                    event, data) {
+  # For debugging:
+  # 
+  cat(tutorial_id, " (", tutorial_version, "): ", user_id , "\n", sep = "")
+  cat("event: ", event, "\n", sep = "")
+
+  if (!is.null(data)) {
+    cat("Event data is as follows: \n")
+    print(data)
+  }
+  
+  # Write the result to the database
+  # Action if event is a multiple choice question:
+  if (event == "question_submission") {
+    valstowrite <- stringr::str_c(
+      "(",
+      "'",user_id,"',",
+      "'",tutorial_id,"',",
+      tutorial_version,",",
+      as.numeric(Sys.time()),",",
+      "'",data$label,"',",
+      "'",stringr::str_c(data$answers,collapse="|"),"',",
+      as.numeric(data$correct),
+      ")"
+    )
+    
+    tryCatch(
+      dbSendQuery(function_db$con,stringr::str_c("INSERT INTO multiplechoice VALUES ",valstowrite)),
+      error = function(e) {
+        cat("Could not write data into the database. Here is the data I tried to write:\n")
+        print(stringr::str_c("INSERT INTO multiplechoice VALUES ",valstowrite))
+        cat("...and here is the error message:\n")
+        print(e)
+      }
+    )
+  }
+  # Action if event is an exercise submission:
+  else if (event == "exercise_submission") {
+    valstowrite <- stringr::str_c(
+      "(",
+      "'",user_id,"',",
+      "'",tutorial_id,"',",
+      tutorial_version,",",
+      as.numeric(Sys.time()),",",
+      "'",data$label,"',",
+      "'",data$code,"',",
+      "'",data$output,"',",
+      "'",data$error_message,"',",
+      as.numeric(data$checked),",",
+      "'",data$feedback,"'",
+      ")"
+    )
+    
+    tryCatch(
+      dbSendQuery(function_db$con,stringr::str_c("INSERT INTO codeevaluations VALUES ",valstowrite)),
+      error = function(e) {
+        cat("Could not write data into the database. Here is the data I tried to write:\n")
+        print(stringr::str_c("INSERT INTO codeevaluations VALUES ",valstowrite))
+        cat("...and here is the error message:\n")
+        print(e)
+      }
+    )
+  }
+}
+
+options(tutorial.event_recorder = tutorial_event_recorder)
+
+</script>
+ 
+<script type="application/shiny-prerendered" data-context="server">
+learnr:::register_http_handlers(session, metadata = NULL)
+</script>
+ 
+<script type="application/shiny-prerendered" data-context="server">
+`tutorial-exercise-ex.fun.1-result` <- learnr:::setup_exercise_handler(reactive(req(input$`tutorial-exercise-ex.fun.1-code-editor`)), session)
+output$`tutorial-exercise-ex.fun.1-output` <- renderUI({
+  `tutorial-exercise-ex.fun.1-result`()
+})
+</script>
+ <!--html_preserve-->
+<script type="application/shiny-prerendered" data-context="dependencies">
+{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["jquery"]},{"type":"character","attributes":{},"value":["1.11.3"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/jquery-1.11.3"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["jquery.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["rmarkdown"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["bootstrap"]},{"type":"character","attributes":{},"value":["3.3.5"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/bootstrap-3.3.5"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["viewport"]}},"value":[{"type":"character","attributes":{},"value":["width=device-width, initial-scale=1"]}]},{"type":"character","attributes":{},"value":["js/bootstrap.min.js","shim/html5shiv.min.js","shim/respond.min.js"]},{"type":"character","attributes":{},"value":["css/cerulean.min.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["rmarkdown"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["pagedtable"]},{"type":"character","attributes":{},"value":["1.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/pagedtable-1.1"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["js/pagedtable.js"]},{"type":"character","attributes":{},"value":["css/pagedtable.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["rmarkdown"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["highlightjs"]},{"type":"character","attributes":{},"value":["9.12.0"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/highlightjs"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["highlight.js"]},{"type":"character","attributes":{},"value":["textmate.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["rmarkdown"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial"]},{"type":"character","attributes":{},"value":["0.9.2"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial.js"]},{"type":"character","attributes":{},"value":["tutorial.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-autocompletion"]},{"type":"character","attributes":{},"value":["0.9.2"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial-autocompletion.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-diagnostics"]},{"type":"character","attributes":{},"value":["0.9.2"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial-diagnostics.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-format"]},{"type":"character","attributes":{},"value":["0.9.2"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmarkdown/templates/tutorial/resources"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial-format.js"]},{"type":"character","attributes":{},"value":["tutorial-format.css","rstudio-theme.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["jquery"]},{"type":"character","attributes":{},"value":["1.11.3"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/jquery-1.11.3"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["jquery.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["rmarkdown"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["font-awesome"]},{"type":"character","attributes":{},"value":["4.5.0"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/font-awesome-4.5.0"]}]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["css/font-awesome.min.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["rmarkdown"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["bootbox"]},{"type":"character","attributes":{},"value":["4.4.0"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/bootbox"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["bootbox.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["localforage"]},{"type":"character","attributes":{},"value":["1.5"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/localforage"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["localforage.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial"]},{"type":"character","attributes":{},"value":["0.9.2"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial.js"]},{"type":"character","attributes":{},"value":["tutorial.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-autocompletion"]},{"type":"character","attributes":{},"value":["0.9.2"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial-autocompletion.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-diagnostics"]},{"type":"character","attributes":{},"value":["0.9.2"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial-diagnostics.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["ace"]},{"type":"character","attributes":{},"value":["1.2.6"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/ace"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["ace.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["clipboardjs"]},{"type":"character","attributes":{},"value":["1.5.15"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/clipboardjs"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["clipboard.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["htmlwidgets"]},{"type":"character","attributes":{},"value":["1.0"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["www"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["htmlwidgets.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["htmlwidgets"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["quiz-binding"]},{"type":"character","attributes":{},"value":["0.9.2"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["htmlwidgets"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["quiz.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[false]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["jquery"]},{"type":"character","attributes":{},"value":["1.11.3"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/jquery-1.11.3"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["jquery.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["rmarkdown"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["bootstrap"]},{"type":"character","attributes":{},"value":["3.3.5"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/bootstrap-3.3.5"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["viewport"]}},"value":[{"type":"character","attributes":{},"value":["width=device-width, initial-scale=1"]}]},{"type":"character","attributes":{},"value":["js/bootstrap.min.js","shim/html5shiv.min.js","shim/respond.min.js"]},{"type":"character","attributes":{},"value":["css/bootstrap.min.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["rmarkdown"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["bootbox"]},{"type":"character","attributes":{},"value":["4.4.0"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/bootbox"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["bootbox.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["localforage"]},{"type":"character","attributes":{},"value":["1.5"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/localforage"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["localforage.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial"]},{"type":"character","attributes":{},"value":["0.9.2"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial.js"]},{"type":"character","attributes":{},"value":["tutorial.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-autocompletion"]},{"type":"character","attributes":{},"value":["0.9.2"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial-autocompletion.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-diagnostics"]},{"type":"character","attributes":{},"value":["0.9.2"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial-diagnostics.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["slickquiz"]},{"type":"character","attributes":{},"value":["1.5.20"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["htmlwidgets/lib/slickquiz"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["js/slickQuiz.js"]},{"type":"character","attributes":{},"value":["css/slickQuiz.css","css/slickQuizTutorial.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]}]}]}
+</script>
+<!--/html_preserve-->
+</div>
+</div>
+
+</div> <!-- topics -->
+
+<div class="topicsContainer">
+<div class="topicsPositioner">
+<div class="band">
+<div class="bandContent topicsListContainer">
+
+<!-- begin doc-metadata -->
+<div id="doc-metadata">
+<h2 class="title toc-ignore" style="display:none;">R Functions</h2>
+</div>
+<!-- end doc-metadata -->
+
+</div> <!-- bandContent.topicsListContainer -->
+</div> <!-- band -->
+</div> <!-- topicsPositioner -->
+</div> <!-- topicsContainer -->
+
+
+</div> <!-- bandContent page -->
+</div> <!-- pageContent band -->
+
+
+
+
+<script>
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+</script>
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+
+</html>

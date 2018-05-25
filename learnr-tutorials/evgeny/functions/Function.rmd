@@ -1,0 +1,356 @@
+---
+title: "R Functions"
+output: learnr::tutorial
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(checkr)
+library(tidyverse)
+library(nycflights13)
+library(openintro)
+library(DBI)
+library(RSQLite)
+knitr::opts_chunk$set(echo = FALSE)
+
+dbpath <- "/Users/alexstringer/phd/s18/leaf-ra/leaf2018/learnr-tutorials/evgeny/functions/"
+
+# Integration with checkr
+tutorial_options(exercise.checker = checkr::check_for_learnr)
+source(stringr::str_c(dbpath,"www/check_functions.R"))
+
+# Record student progress
+# Connect to the database
+
+function_db <- src_sqlite(stringr::str_c(dbpath,"functions.sqlite"),create=FALSE)
+
+tutorial_event_recorder <- function(tutorial_id, tutorial_version, user_id, 
+                                    event, data) {
+  # For debugging:
+  # 
+  cat(tutorial_id, " (", tutorial_version, "): ", user_id , "\n", sep = "")
+  cat("event: ", event, "\n", sep = "")
+
+  if (!is.null(data)) {
+    cat("Event data is as follows: \n")
+    print(data)
+  }
+  
+  # Write the result to the database
+  # Action if event is a multiple choice question:
+  if (event == "question_submission") {
+    valstowrite <- stringr::str_c(
+      "(",
+      "'",user_id,"',",
+      "'",tutorial_id,"',",
+      tutorial_version,",",
+      as.numeric(Sys.time()),",",
+      "'",data$label,"',",
+      "'",stringr::str_c(data$answers,collapse="|"),"',",
+      as.numeric(data$correct),
+      ")"
+    )
+    
+    tryCatch(
+      dbSendQuery(function_db$con,stringr::str_c("INSERT INTO multiplechoice VALUES ",valstowrite)),
+      error = function(e) {
+        cat("Could not write data into the database. Here is the data I tried to write:\n")
+        print(stringr::str_c("INSERT INTO multiplechoice VALUES ",valstowrite))
+        cat("...and here is the error message:\n")
+        print(e)
+      }
+    )
+  }
+  # Action if event is an exercise submission:
+  else if (event == "exercise_submission") {
+    valstowrite <- stringr::str_c(
+      "(",
+      "'",user_id,"',",
+      "'",tutorial_id,"',",
+      tutorial_version,",",
+      as.numeric(Sys.time()),",",
+      "'",data$label,"',",
+      "'",data$code,"',",
+      "'",data$output,"',",
+      "'",data$error_message,"',",
+      as.numeric(data$checked),",",
+      "'",as.numeric(data$feedback$correct),"'",
+      "'",data$feedback$message,"'",
+      "'",data$feedback$type,"'",
+      "'",data$feedback$location,"'",
+      ")"
+    )
+    
+    tryCatch(
+      dbSendQuery(function_db$con,stringr::str_c("INSERT INTO codeevaluations VALUES ",valstowrite)),
+      error = function(e) {
+        cat("Could not write data into the database. Here is the data I tried to write:\n")
+        print(stringr::str_c("INSERT INTO codeevaluations VALUES ",valstowrite))
+        cat("...and here is the error message:\n")
+        print(e)
+      }
+    )
+  }
+}
+
+options(tutorial.event_recorder = tutorial_event_recorder)
+
+```
+
+## R Functions:
+
+Functions are blocks of R code that are stored under specific names. They are built to perform different operations that are frequently used. Instead of writing the same piece of code every time it is very convenient to do it once, store it as a function and then call it many times in the main body of the R code. There are many useful functions that are already built-in R (in various packages) or we can write our own. We first show the general structure of a function, give an example how to build one and then show some very helpful and frequently used build-in R functions.
+
+Generally to create a function we can use the following template:
+```{r echo=T,eval=F}
+my_function <- function(arg1,arg2)
+{
+  ......................
+  BODY OF THE FUNCTION
+  ......................
+
+  return( result )
+}
+```
+Here `my_function`, `arg1`, `arg2` and `result` are arbitrary names for the name of the function, arguments and the R object that the function returns respectively. Arguments are inputs to a function (can be more than 2 separated by commas) and they are any R objects, e.g. data frames, lists, vectors, matrices and so on. It is possible that a function does not have any arguments then we simply put `function()`  with nothing inside the parentheses. Generally a function performs some operations on arguments and then returns the resulting variable (again can be any R object). However it is not always true, it is possible that a function produces a graph for example, then the R code to plot the graph will be contained inside the body of a function while the function returns nothing. So in that case we ignore `return(result)` part. 
+
+Now lets look at one example. Suppose we need to build a function (call it `check_vec`) that has two inputs (arguments), one is a vector `vec` the other one is some constant `const`. The function should return 3 numbers: length of the vector, sum of the entries of the vector and number of elements of `vec` that are larger than `const`. Here is the R code for this function:
+```{r echo=T, eval=T}
+check_vec <- function(vec,const)
+{
+  len <- length( vec )
+  sum_entry <- sum( vec )
+  above <- sum( vec > const )
+  result <- c(len,sum_entry,above)
+  names(result) <- c("length","sum","num_above")
+  return( result )
+}  
+```
+So the function returns a vector of length 3 with appropriate names for each entry. It is worth noting that `length` and `sum` are built-in R functions, so we use functions inside our function.
+Now we input a vector and a constant 1 to `check_vec` function:
+```{r eval=T,echo=T}
+my_vec <- c(4,1,-4,9,0,1,10,2)
+check_vec(my_vec,1)
+```
+To use a function we just type its name and enter arguments in round brackets. The function returns what we wanted.
+
+Note the order of the inputted arguments. `my_vec` is on the first position (because we know that the first argument is `vec`) followed by a constant. If we switch the two, we get completely different output:
+```{r eval=T,echo=T}
+check_vec(1,my_vec)
+```
+Now `check_vec()` function considers 1 as `vec` and `my_vec` as `const`. So the order of arguments is essential and in more complicated functions with tens of arguments we can easily enter variables to wrong arguments. To avoid that, we can be more specific when entering variables, by adding arguments' names followed by equal signs before the variables, for example:
+```{r eval=T,echo=T}
+check_vec(const=1,vec=my_vec)
+```
+Now we get back the original result even though the order is wrong. 
+
+Next suppose we enter variable for `vec` but forget to input `const`:
+```{r echo=TRUE, eval=F}
+check_vec(my_vec)
+```
+Then an error message will appear because `const` value was not supplied. Frequently it is convenient to have default parameters for some arguments. Lets update our function so that by default `const` would be 1:
+```{r echo=T, eval=T}
+check_vec <- function(vec,const=1)
+{
+  len <- length( vec )
+  sum_entry <- sum( vec )
+  above <- sum( vec > const )
+  result <- c(len,sum_entry,above)
+  names(result) <- c("length","sum","num_above")
+  return( result )
+}  
+```
+The only difference is that we put `const=1` in the first line. Now if we enter `my_vec` but forget about `const` there is no error:
+```{r eval=T,echo=T}
+check_vec(my_vec)
+```
+The function is evaluated with default value for `const`, of course if we type some number for this argument it will overwrite the default value:
+```{r eval=T,echo=T}
+check_vec(my_vec,-2)
+```
+
+
+### Some useful built-in R functions
+We are already familiar with functions `sum()`, `length()`, `dim()`, `mean()`, `var()`, `sd()`. Remember that when we use `mean()` function with removed missing values we add `na.rm=TRUE` in the brackets. We can now see that `na.rm` is just an argument of the `mean()` function which by default is `FALSE`.
+
+If we have a number (or vector) with many decimal digits we can use `round()` function to round it. This function has two arguments: the number itself and the number of decimal places to use (by default 0):
+```{r echo=T, eval=T}
+round(5.3585642)
+round(5.3585642,2)
+```
+
+In statistics and probability we often are interested in simulating some random phenomena. For example flipping a coin many times or tossing a dice. `sample()` function is very useful for these problems. First lets get the arguments of this function, if we just type function's name (no brackets) R outputs its arguments and "body":
+```{r echo=T, eval=T}
+sample
+```
+We see that this function has 4 arguments: `x`,`size`,`replace` (`FALSE` by default) and `prob` (`NULL` by default). We will ignore `prob` argument for now. Usually `x` is a vector of integers or characters that we want to sample from. `size` is a number of random samples from `x`. 
+We can imagine balls in an urn with the number of balls and their labels correspond to `length(x)` and values of `x` respectively. `size` argument represents the number of ball draws from the urn. Now there are two ways we can sample. First one, is to randomly select a ball from the urn, record its label and put it back (`replace=TRUE`). In this manner we can sample infinite number of balls (with many ties of course). The second way is to randomly sample a ball, record its label and put it aside (`replace=FALSE`) and continue doing that for other balls. Note that we cannot sample the same ball twice and the sample size (`size` argument) must be less than or equal to the total number of balls (`length(x)`). Therefore it is crucial when using `sample` function to understand whether the sampled elements from `x` have to be replaced or not.
+
+Now lets look at some examples. Suppose we want to flip a fair coin 10 times, and record whether we get head ("H") or tail ("T") each time:
+```{r echo=T, eval=T}
+sample(c("H","T"),10,replace=TRUE)
+``` 
+Note that we have to put `replace=TRUE` since each flip is independent of the previous one. Be default R samples "H" and "T" uniformly (fair coin), if we suspect that the coin is not balanced and lands heads with probability 0.6 (for example) instead of 0.5, then we can add `prob` argument with corresponding probabilities for heads and tails:
+```{r echo=T, eval=T}
+sample(c("H","T"),10,replace=TRUE,prob=c(0.6,0.4))
+```  
+
+
+Next we simulate a fair die tossing, the outcome of each toss is either 1,2,3,4,5 or 6. Suppose we do it 3 times:
+```{r echo=T, eval=T}
+sample(1:6,3,replace=TRUE)
+``` 
+Again we need to indicate `replace=TRUE`, also note that `1:6` is a shortcut to `c(1,2,3,4,5,6)`. 
+
+Lastly we can compose functions, for example we may find rounded mean (to 2 decimal places) of the die tossing outcome by combining `round()` `mean()` and `sample()`functions:
+```{r echo=T, eval=T}
+round( mean( sample(1:6,3,replace=TRUE) ), 2 )
+``` 
+Observe that operations flow from inner function to outer, so first toss a die 3 times, then find the mean and finally round to 2 decimal places.
+
+### Exercises
+
+**A.** Create a function `sum_vec` that has arguments: vector `x`, integer `d` and logical `na.rm`. Make `0` and `FALSE` defaults for `d` and `na.rm` respectively. The function should return a vector of 3 numbers: mean, standard deviation and number of missing values of vector `x`. The results for mean and standard deviation must be rounded to `d` decimal places and if `na.rm` is `TRUE` then the function must remove missing values for mean and standard deviation calculations.
+
+**B.** Evaluate the function for `x=c(4,6,1,NA,1,5,NA)` with `d` being equal to 2 and `na.rm` either `TRUE` or `FALSE`:
+```{r, ex.fun.1, exercise=TRUE,exercise.lines = 14}
+sum_vec <- function()
+```
+```{r ex.fun.1-hint-1}
+sum_vec <- function(x, d, na.rm)
+```
+```{r ex.fun.1-hint-2}
+sum_vec <- function(x, d=0, na.rm=FALSE)
+```
+```{r ex.fun.1-hint-3}
+sum_vec <- function(x, d=0, na.rm=FALSE)
+{
+  m <- mean(x)
+}  
+```
+```{r ex.fun.1-hint-4}
+sum_vec <- function(x, d=0, na.rm=FALSE)
+{
+  m <- mean(x,na.rm=na.rm)
+  s <- sd(x)
+}  
+```
+```{r ex.fun.1-hint-5}
+sum_vec <- function(x, d=0, na.rm=FALSE)
+{
+  m <- mean(x,na.rm=na.rm)
+  s <- sd(x,na.rm=na.rm)
+}  
+```
+```{r ex.fun.1-hint-6}
+sum_vec <- function(x, d=0, na.rm=FALSE)
+{
+  m <- mean(x,na.rm=na.rm)
+  s <- sd(x,na.rm=na.rm)
+  mis <- sum(is.na(x))
+}  
+```
+```{r ex.fun.1-hint-7}
+sum_vec <- function(x, d=0, na.rm=FALSE)
+{
+  m <- mean(x,na.rm=na.rm)
+  s <- sd(x,na.rm=na.rm)
+  mis <- sum(is.na(x))
+  Result <- c(round(m),round(s),mis)
+}  
+```
+```{r ex.fun.1-hint-8}
+sum_vec <- function(x, d=0, na.rm=FALSE)
+{
+  m <- mean(x,na.rm=na.rm)
+  s <- sd(x,na.rm=na.rm)
+  mis <- sum(is.na(x))
+  Result <- c(round(m,d),round(s,d),mis)
+  names(Result) <- c("Mean","SD","Miss")
+}  
+```
+```{r ex.fun.1-hint-9}
+sum_vec <- function(x, d=0, na.rm=FALSE)
+{
+  m <- mean(x,na.rm=na.rm)
+  s <- sd(x,na.rm=na.rm)
+  mis <- sum(is.na(x))
+  Result <- c(round(m,d),round(s,d),mis)
+  names(Result) <- c("Mean","SD","Miss")
+  return(Result)
+}  
+```
+```{r ex.fun.1-solution}
+sum_vec <- function(x, d=0, na.rm=FALSE)
+{
+  m <- mean(x,na.rm=na.rm)
+  s <- sd(x,na.rm=na.rm)
+  mis <- sum(is.na(x))
+  Result <- c(round(m,d),round(s,d),mis)
+  names(Result) <- c("Mean","SD","Miss")
+  return(Result)
+}  
+sum_vec(x=c(4,6,1,NA,1,5,NA),d=2,na.rm=TRUE)
+```
+```{r ex.fun.1-check}
+check_ex_fun_1(USER_CODE)
+```
+
+
+**C.** Consider the next function:
+```{r echo=T, eval=TRUE, cache=TRUE}
+my_fun <- function(size=2, replace=FALSE, d=2)
+{
+  sam <- sample(1:6,size=size,replace=replace)
+  m   <- round( mean(sam),d )
+  s   <- round( sd(sam),d )
+  return( c(m,s) )
+}  
+```
+Answer the following questions:
+
+```{r ex.fun.2-question, echo=FALSE}
+quiz(caption = "",
+     question("What are possible outcomes of `my_fun()`? (select ALL that apply)",
+              answer(sprintf("%s",c(2,0))),
+              answer(sprintf("%s",c(5,1.41)), correct = TRUE),
+              answer(sprintf("%s",c(2,1.41)),correct=TRUE),
+              answer("Error Message"),
+              random_answer_order = TRUE,
+              allow_retry = FALSE
+     ),
+     question("What are possible outcomes of `my_fun(replace=TRUE)`? (select ALL that apply)",
+              answer(sprintf("%s",c(2,0)),correct=TRUE),
+              answer(sprintf("%s",c(5,1.41)), correct = TRUE),
+              answer(sprintf("%s",c(2.5,0.71)),correct=TRUE),
+              answer("Error Message"),
+              random_answer_order = TRUE,
+              allow_retry = FALSE
+     ),
+     question("What is the possible outcome of `my_fun(10)`?",
+              answer(sprintf("%s",c(2,0))),
+              answer(sprintf("%s",c(5,1.41))),
+              answer(sprintf("%s",c(2,1.41))),
+              answer("Error Message",correct=TRUE),
+              random_answer_order = TRUE,
+              allow_retry = FALSE
+     ),
+     question("What is the possible outcome of `my_fun(10,replace=TRUE)`?",
+              answer(sprintf("%s",c(6.1,1.6))),
+              answer(sprintf("%s",c(2.6,NA))),
+              answer(sprintf("%s",c(3.1,1.6)),correct=TRUE),
+              answer("Error Message"),
+              random_answer_order = TRUE,
+              allow_retry = FALSE
+     ),
+    question("What is the possible outcome of `my_fun(TRUE,10)`?",
+              answer(sprintf("%s",c(5.2,1.6))),
+              answer(sprintf("%s",c(2.6,NA))),
+              answer(sprintf("%s",c(3.1,1.6))),
+              answer("Error Message",correct=TRUE),
+              random_answer_order = TRUE,
+              allow_retry = FALSE
+     )
+)
+```
