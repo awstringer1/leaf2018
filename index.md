@@ -1,6 +1,3 @@
----
-title: LEAF 2018
----
 # Description
 This site hosts materials created by Alex Stringer in support of the LEAF project.
 
