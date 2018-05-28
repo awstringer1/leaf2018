@@ -1,0 +1,109 @@
+---
+title: "STA261 Summer 2018 Lecture 5:" 
+subtitle: "Sampling Distributions of Estimators"
+author: "Alex Stringer"
+date: '`r Sys.Date()`'
+output: 
+  html_document:
+    toc: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup-noshow, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r setup-show,include=TRUE}
+# Load the tidyverse packages
+suppressMessages({
+  suppressWarnings({
+    library(tidyverse)
+  })
+})
+```
+
+# Sampling Distributions
+
+In lecture, we discussed the concept of the *sampling distribution* of an estimator: its probability distribution. An estimator is a function of the sample, which is random. If we repeated the data-collection experiment again, we would get a different sample- and a different value of our estimator. If we repeated the experiment many times, we would get many different values of our estimator, and they would be distributed according to the sampling distribution of that estimator.
+
+## Normal Example
+
+If $X_{i} \overset{IID}{\sim} N(\mu,1)$ is a random sample of size $n$ from a normal distribution with unit variance and unknown mean $\mu$, we have seen that we can estimate $\mu$ with $\hat{\mu} = \bar{X} = \frac{1}{n}\sum_{i=1}^{n}X_{i}$, the sample mean. In class we derived the *sampling distribution* of the sample mean (for normally distributed samples):
+\[
+\bar{X} \sim \left( \mu,\frac{1}{n}\right)
+\]
+That is, normally distributed with the same mean as $X_{i}$ and variance $1/n$ scaling down linearly with the sample size.
+
+What does this mean? Let's draw one random sample of size $n = 5$ from a normal distribution and compute the sample mean. We'll fix the true $\mu$ at $\mu = 0$, though this works for any $\mu$:
+```{r sample-normal-1}
+set.seed(3827)
+# Draw one sample from normal(mu,1) with mu fixed at 0
+n <- 5
+mu <- 0
+sig <- 1
+samp <- rnorm(n,mu,sig)
+mean(samp)
+```
+The value `r round(mean(samp),2)` is one realization from a $N(0,1/5)$ distribution. How do we use this information? Since we're using $\bar{X}$ to estimate $\mu$, our best guess at the value of $\mu$ based on this sample is $\mu = `r round(mean(samp),2)`$. This is different from the true value $\mu = 0$. Does that mean our estimator is bad?
+
+No, because there is *variability* in the sample, and hence *variability* in our estimator. Knowing the sampling distribution of our estimator allows us to *quantify* this variability in a meaningful way.
+
+For example, we can make statements like "if $\mu = 0$, what is the probability that I would see a sample mean of $\bar{X} = `r round(mean(samp),2)`$ or something even farther away from $0$, in a sample of size $n = 5$?". If this probability is low, then either we observed something really unlikely, or $\mu = 0$ is not a value of $\mu$ that is well supported by the data. We can compute this probability:
+```{r normal-sample-2}
+pnorm(-abs(mean(samp)),mu,sig/sqrt(n)) + 1 - pnorm(abs(mean(samp)),mu,sig/sqrt(n))
+```
+Pretty likely! If $\mu = 0$, there actually is a pretty good chance of seeing a sample as "extreme" as the one we observed.
+
+We don't always know the sampling distribution of our estimator analytically. Let's verify the above calculation through a simulation:
+```{r normal-sample-3}
+set.seed(432976)
+B <- 10000
+simulated_means <- 1:B %>%
+  map(~rnorm(n,mu,sig)) %>%
+  map(mean) %>%
+  reduce(c)
+  
+mean(simulated_means < -abs(mean(samp))) + mean(simulated_means > abs(mean(samp)))
+```
+Let's unpack that simulation a bit. We:
+
+- Defined a variable `B` indiciating the number of samples of size $n$ we wished to simulate
+- Use the `map` function to efficiently loop over the vector $(1,2,\ldots,B)$, taking a sample of size $n$ each time and storing the results in a list
+- Used the `map` function again to take this list of samples, and take the `mean` of each
+- Use the `reduce` function to recursively loop over this list, applying the `c` (concatenate) function to each element in turn, returning a vector of simulated sample means
+- Computed the relative frequency with which our simulated sample means were father away from $0$ in absolute value than the original sample mean we got
+
+We can make a histogram of the simulated sample means and compare the theoretical density curve for $\bar{X}$:
+```{r normal-sample-4}
+data_frame(x = density(simulated_means,n=100)$x,
+           y = density(simulated_means,n=100)$y,
+           col = if_else(x < -abs(mean(samp)) | x > abs(mean(samp)),"Yes","No")) %>%
+  ggplot() +
+  theme_classic() + 
+  geom_bar(mapping = aes(x = x,y = y,fill = col),
+           stat = "identity",
+           colour = "black") +
+  stat_function(fun = dnorm,args = list(mean = mu,sd = sig/sqrt(n)),col = "purple") +
+  labs(title = "Sampling Distribution of Sample Mean for Normally Distributed Samples",
+       subtitle = "Simulated (bars) vs Theoretical (purple line)",
+       x = "Simulated Sample Mean",
+       y = "Density",
+       fill = "More Extreme than Observed?") +
+  scale_fill_manual(values = c("Yes" = "red","No" = "orange")) +
+  scale_x_continuous(breaks = seq(-2,2,by = 0.5))
+```
+The sampling distribution of an estimator gives an idea of what values of the estimator are reasonable to observe, given specfic values of the parameters.
+
+## Connection to the Central Limit Theorem
+
+The Central Limit Theorem can be rephrased using our new terminology: let $X_{i} \overset{IND}{\sim} F$ be independent random variables with mean $0$ and finite variance $\sigma^{2} < \infty$. Let $S_{n} = \sum_{i=1}^{n}X_{i}$. Then the sampling distribution of $S_{n}/\sigma\sqrt{n}$ converges to a standard normal distribution. Or put another way, the sampling distribution of $S_{n}/\sigma\sqrt{n}$ is well approximated by a standard normal distribution if $n$ is large.
+
+Let us consider the example of waiting for the subway. You arrive at the stop at a time that is unrelated to how long it's been since the last train arrived. If the subways arrived *independently* from each other, a good model for your waiting time for the next train would be $W_{i} \sim Exponential(\lambda)$, where $E(W_{i}) = \lambda$. The TTC claims that the average wait time for a subway train is $\lambda = 3$ minutes.
+
+However, subways don't arrive independently; they tend to clump together, because 1) they have to wait at the platform to load passengers, and platforms where a train has come more recently tend to have less passengers to load and b) the signal system is circa 1960's and can't handle trains being a certain distance apart. So we don't know the distribution of $W_{i}$. Can we still use our observed waiting times to test the apparent validity of the TTC's claim?
+
+Suppose you wait for the train every day for 3 months, or $n = 90$ days. Under independence, we know the MLE for estimating $\lambda$ is $\hat{\lambda} = \bar{W} = \frac{1}{n}\sum_{i=1}^{n}W_{i}$, your average wait time over the period. Since we don't know the nature of the dependence between train arrival times, the sample average is still the best we can do. If the TTC's claim is accurate, what values of $\hat{\lambda}$ would you expect to see? If you had an average wait time over this period of, say $5$ minutes, would you think the TTC's claim was reasonable?
+
+
+
+
