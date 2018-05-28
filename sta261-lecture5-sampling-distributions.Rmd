@@ -98,12 +98,83 @@ The sampling distribution of an estimator gives an idea of what values of the es
 
 The Central Limit Theorem can be rephrased using our new terminology: let $X_{i} \overset{IND}{\sim} F$ be independent random variables with mean $0$ and finite variance $\sigma^{2} < \infty$. Let $S_{n} = \sum_{i=1}^{n}X_{i}$. Then the sampling distribution of $S_{n}/\sigma\sqrt{n}$ converges to a standard normal distribution. Or put another way, the sampling distribution of $S_{n}/\sigma\sqrt{n}$ is well approximated by a standard normal distribution if $n$ is large.
 
-Let us consider the example of waiting for the subway. You arrive at the stop at a time that is unrelated to how long it's been since the last train arrived. If the subways arrived *independently* from each other, a good model for your waiting time for the next train would be $W_{i} \sim Exponential(\lambda)$, where $E(W_{i}) = \lambda$. The TTC claims that the average wait time for a subway train is $\lambda = 3$ minutes.
+Consider the example of the number of people using the Toronto subway in a given day. The total number of people riding the subway in a day is the sum of the riders at each of the TTC's $69$ stations. Suppose in an effort to secure more government funding, the TTC is claiming that it has an average of $3$ million subway riders per weekday (note: this is a fictional scenario). Can we use available data to evaluate how reasonble a claim this is?
 
-However, subways don't arrive independently; they tend to clump together, because 1) they have to wait at the platform to load passengers, and platforms where a train has come more recently tend to have less passengers to load and b) the signal system is circa 1960's and can't handle trains being a certain distance apart. So we don't know the distribution of $W_{i}$. Can we still use our observed waiting times to test the apparent validity of the TTC's claim?
+We can obtain data on station-level subway ridership from [Open Data Toronto](https://www.toronto.ca/city-government/data-research-maps/open-data/open-data-catalogue/#75d6b4a2-7f29-b0df-f1eb-cc5bc7f53b68). The data has been cleaned slightly (just removed extra header rows) and stored on github. We can read in the data as follows:
 
-Suppose you wait for the train every day for 3 months, or $n = 90$ days. Under independence, we know the MLE for estimating $\lambda$ is $\hat{\lambda} = \bar{W} = \frac{1}{n}\sum_{i=1}^{n}W_{i}$, your average wait time over the period. Since we don't know the nature of the dependence between train arrival times, the sample average is still the best we can do. If the TTC's claim is accurate, what values of $\hat{\lambda}$ would you expect to see? If you had an average wait time over this period of, say $5$ minutes, would you think the TTC's claim was reasonable?
+```{r ttc-1}
+ttc <- readr::read_csv("https://raw.githubusercontent.com/awstringer1/sta261s18supplementary/master/datasets/ttc-subway-2015.csv") %>%
+  dplyr::select(-starts_with("X")) %>%
+  filter(!is.na(total)) %>%
+  filter(station != "Grand Totals")
+ttc
+```
+The `total` column is the total number of riders on a "typical" weekday (we don't know the ttc's definiton of "typical"). The `to_trains` and `from_trains` are the number of riders boarding and disembarking from trains at each station.
+
+Any time you read in data, you need to perform sanity checks. For example, we know there are $69$ subway stations, so why are there $74$ rows in the dataframe? Inspection of the data reveals that transfer stations are counted twice: Bloor/Yonge, Sheppard-Yonge, Kennedy, St. George and Spadina. This reconciles the total number of rows with the correct number of stations.
+
+Now, to evaluate the TTC's claim. We first compute the observed total number of riders on this one day:
+```{r ttc-2}
+ttc %>%
+  summarize(total = sum(total)) %>%
+  pull(total)
+
+```
+On this weekday, there were $2,669,373$ riders. If the average number of riders per weekday was actually $3,000,000$, how likely would it be to see $2,669,373$ riders or a number farther from $3,000,000$ in any single day? It sounds like we can't answer this question, because we only have data on a single day. If the population whose mean we are interested in is the total number of riders on any weekday of the year, then we are trying to estimate a mean with only a single datapoint, $\hat{\mu} = X_{1}$. 
+
+Or are we? Let's look at the distribution of station-level ridership:
+```{r ttc-3}
+ttc %>%
+  ggplot(aes(x = total)) +
+  theme_light () +
+  geom_histogram(bins = 15,colour = "black",fill = "grey") +
+  labs(title = "Station-level Subway Ridership",
+       subtitle = "TTC Ridership Data",
+       x = "Number of Riders in a Typical Day",
+       y = "Number of Stations") +
+  scale_x_continuous(labels = scales::comma_format())
 
 
+```
+Definitely not normal; I don't immediately recognize this as being any distribution.
 
+The key point, though, is that our estimator $\hat{\mu} = X_{1}$ is *actually a sum of random quantities which can reasonably be thought to be independent*. That is, station-level riderships. What we have actually observed is
+\[
+X_{1} = \sum_{i=1}^{74}R_{i}
+\]
+where each $R_{i}$ is a random variable assumed to have finite mean and variance, and we are assuming the $R_{i}$ are independent. We can apply the Central Limit Theorem to our estimator, even though at first glance it looked like it was only a single observation!
 
+If the actual average weekdaily ridership is $3,000,000$, the Central Limit Theorem can be applied to give us the distributional approximations:
+\[
+\begin{aligned}
+\frac{\sum_{i=1}^{74}R_{i} - 3,000,000}{\sigma_{R}\sqrt{74}} &\overset{\cdot}{\sim} N(0,1) \\
+\frac{\sum_{i=1}^{74}\left( R_{i} - \bar{R}\right)^{2}}{\sigma^{2}_{R}} &\overset{\cdot}{\sim} \chi^{2}_{73}
+\end{aligned}
+\]
+Combining these as we did when we derived the $t$-distribution lets us approximate
+\[
+\frac{\sum_{i=1}^{74}R_{i} - 3,000,000}{s_{R}\sqrt{74}} \overset{\cdot}{\sim} t_{73}
+\]
+where $s_{R} = \sqrt{\sum_{i=1}^{74}\left( R_{i} - \bar{R}\right)^{2}}$ is the sample variance of the station ridership.
+
+With these results in hand, we can compute an approximate probability of seeing our result or something more extreme, conditional on the TTC's claim being true, in much the same way as we did in the simulated normal distribution example. First we compute the sample variance and "observed t-statistic" $t_{obs}$:
+```{r ttc-4}
+sR <- sd(ttc$total)
+tobs <- (2669373 - 3000000)/(sR*sqrt(74))
+cat("Sample Variance: ",sR,"\nObserved t-statistic: ",tobs,"\n")
+```
+We then compute:
+\[
+\begin{aligned}
+P\left( |\sum_{i=1}^{74}R_{i} - 3,000,000| > |2,669,373 - 3,000,000| \right) &= 1 - P\left(\frac{-|2,669,373 - 3,000,000|}{s_{R}\sqrt{74}} < \frac{\sum_{i=1}^{74}R_{i} - 3,000,000}{s_{R}\sqrt{74}} < \frac{|2,669,373 - 3,000,000|}{s_{R}\sqrt{74}} \right) \\
+&= 1 - P\left( -|t_{obs}| < t_{73} < |t_{obs}| \right) \\
+&= 1 - P(`r -round(abs(tobs),2)` < t_{73} < `r round(abs(tobs),2)`) \\
+&= `r pt(-abs(tobs),73) + 1 - pt(abs(tobs),73)`
+\end{aligned}
+\]
+
+Given the high between-station variability, based on this methodology it appears that observing $2,669,373$ riders on a given day is reasonable if the true average daily ridership is $3,000,000$.
+
+Remember when using the CLT that you are making assumptions; most strongly, assuming the random variables you are summing are statistically independent, which cannot be reliably checked from a single dataset. This is assumed from the design of the data collection process, and should be open to criticism. For example here, we would need to discuss in much more detail what it means and whether we think it is reasonable to claim that ridership at individual stations on the same day are independent.
+
+Check out [this]() tutorial for further detail on how to go about checking these distributional approximations given only a single set of data like we have here.

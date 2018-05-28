@@ -60,6 +60,14 @@ Materials that can be used during lecture as a supplement to traditional slides 
     - Apply maximum likelihood estimation in cases where no closed-form solution exists and numerical optimization must be used (**Methods**)
     - Fit frequency curves to data using the method of maximum likelihood (**Real World Problems**)
     
+[Sampling Distributions of Estimators](http://awstringer1.github.io/leaf2018/sta261-lecture5-sampling-distributions)
+
+  - Example courses: **STA261**, STA255, STA220
+  - Description: introduction to the concept of a sampling distribution of an estimator. First do a simulated normal distribution example, illustrating the concept of repeated sampling and comparing the theoretical sampling distribution of the mean with the empirical. Then a real data example: using data on aggregated subway station-level ridership from the TTC, apply the central limit theorem to total ridership summed across stations to evaluate a (fictional) claim that the TTC has 3,000,000 riders on an average weekday. Includes brief discussion of the assumptions required to do this.
+  - Intended Learning Outcomes:
+    - Simulate repeated sampling to understand this concept, and compare theoretical and empirical results (**Computational Thinking**)
+    - Source data from Open Data Toronto and use it, combined with appropriate methodology, to answer an actual question (**Real World Problems**)
+    - Think critically about whether a particular statistical methodology (CLT) is appropriate for answering a particular question on a particular dataset (**Theory**,**Real World Problems**)
     
 ### Learnr Tutorials
 Hosted tutorials on course concepts writtedn using the **learnr** package in R.
