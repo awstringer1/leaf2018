@@ -32,6 +32,14 @@ Materials that can be used during lecture as a supplement to traditional slides 
     - Create simulations in `R` to investigate theoretical results (**Computational Thinking**)
     - Plot univariate data using `ggplot` (**Methods**); interpret plots in the context of a problem and decide on further analysis (**Real World Problems**)
 
+[Central Limit Theorem: application in analyzing roundoff error](http://awstringer1.github.io/leaf2018/lecture-1-clt-roundoff-error.html)
+
+  - Example courses: **STA261**, STA255, STA220
+  - Description: comparing two strategies for rounding the sum of a bunch of numbers: rounding once at the end, vs rounding each number independently before summing. Applying the CLT to the summed roundoff errors; we find the two strategies have the same expected error (of zero), however we analyze graphically and theoretically how much worse the latter strategy is in terms of what errors *might* be realized on any given run.
+  - Intended Learning Outcomes:
+    - Create simulations in `R` to investigate applied problems (**Computational Thinking**)
+    - Intermediate plotting of multiple univariate datasets in `ggplot` (**Methods**)
+
 [Fitting a Gamma distribution to rainfall data via Method of Moments](http://awstringer1.github.io/leaf2018/sta261-lecture2-method-of-moments-gamma.html)
 
   - Example Courses: **STA261**, STA255

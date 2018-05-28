@@ -24,7 +24,7 @@ suppressMessages({
 
 In class, we discussed the Central Limit Theorem, regarding the distribution of sums of independent random variables with zero mean and finite variance. Here we provide a computational example to illustrate this concept.
 
-We expand on Question 12 from Chapter 5 of Rice, page 189. Suppose we are adding together a bunch of numbers $x_{i}$, each of which are stored to many decimal places. We want the result of our adding to be an integer, which means we have to round to zero decimal places. Do we round each number and then sum them, or do we sum them and then round the result? Intuitively we might think that there would be less error in rounding once than rounding many times, but you could also argue that since rounding down and rounding up "cancel each other out" in some sense, maybe the total error from the two procedures wouldn't be that far off. Let's investigate.
+We expand on Question 12 from Chapter 5 of Rice, page 189. Suppose we are adding together a bunch of numbers $x_{i}$, each of which are stored to many decimal places. We want the result of our adding to be an integer, which means we have to round to zero decimal places. Do we round each number and then sum them, or do we sum them and then round the result? Intuitively we might think that there would be less error in rounding once than rounding many times. What do you think? Let's investigate.
 
 The rounding error when rounding any number to zero decimal places can be modelled by a $Unif(-0.5,0.5)$ random variable. We can argue this heuristically, or we can simulate and verify empirically:
 ```{r roundoff-1}
@@ -52,7 +52,7 @@ data_frame(x = u) %>%
   mutate(q = qunif(1:length(u) / (1 + length(u)),min = -0.5,max = 0.5)) %>%
   ggplot(aes(x = q,y = x)) +
   theme_light() +
-  geom_point(colour = "darkgrey",size = 0.7) +
+  geom_point() +
   geom_abline(slope = 1,intercept = 0,colour = "red") +
   labs(title = "Uniform QQ-Plot for Round-off Error",
        subtitle = "Testing goodness of fit of a uniform distribution to simulated round-off error",
@@ -62,8 +62,70 @@ data_frame(x = u) %>%
 ```
 This indicates nearly perfect fit.
 
-We proceed assuming that roundoff error is uniformly distributed on $(-0.5,0.5)$. Letting $y_{i}$ denote the rounded $x_{i}$, we have
+We proceed assuming that roundoff error is uniformly distributed on $(-0.5,0.5)$. 
+
+Letting $y_{i}$ denote the rounded $x_{i}$, we have
 \[
 x_{i} = y_{i} + u_{i}
 \]
-where $u_{i} \sim Unif(-0.5,0.5)$ is the roundoff error 
+where $u_{i} \sim Unif(-0.5,0.5)$ is the roundoff error. The sum, then, can be expressed as
+\[
+\sum_{i=1}^{n} x_{i} = \sum_{i=1}^{n}y_{i} + \sum_{i=1}^{n}u_{i}
+\]
+As the rounding of each number is independent, $S_{n} = \sum_{i=1}^{n}u_{i}$ is a sum of independent random variables. We find
+\[
+\begin{aligned}
+E(S_{n}) &= \sum_{i=1}^{n}E(u_{i}) = 0 \\
+Var(S_{n}) &= \sum_{i=1}^{n} Var(u_{i}) = \sum_{i=1}^{n} \frac{(0.5 - (-0.5))^{2}}{12} = n/12
+\end{aligned}
+\]
+Applying the CLT lets us approximate the distribution of $S_{n}$:
+\[
+\frac{S_{n} - 0}{\sqrt{n/12}} \overset{\cdot}{\sim} N(0,1)
+\]
+Or, put another way,
+\[
+S_{n} \overset{\cdot}{\sim} N(0,n/12)
+\]
+So the total roundoff error when rounding each summand before summing is approximately $N(0,n/12)$ distributed, when the number of summands $n$ is reasonably large.
+
+Let's see whether this is better or worse than rounding once via simulation. We'll simulate our scenario many times, and look at the roundoff error under both scenarios each time. Setting $n = 100$, we find
+```{r roundoff-3}
+set.seed(4578)
+n <- 10
+B <- 10000 # number of simulations to do
+roundoffs_1 <- numeric(B)
+roundoffs_2 <- numeric(B)
+for (b in 1:B) {
+  # Generate the n random numbers
+  x <- rnorm(n)
+  # Compute the two roundoff errors
+  roundoffs_1[b] <- sum(x - round(x))
+  roundoffs_2[b] <- sum(x) - round(sum(x))
+}
+
+# Plot them on the same graph
+data_frame(round_many_x = density(roundoffs_1,n=100)$x,
+           round_many_y = density(roundoffs_1,n=100)$y
+           ) %>%
+  ggplot() +
+  theme_classic() + 
+  geom_bar(aes(x = round_many_x,y = round_many_y),stat = "identity",colour = "black",fill = "purple",alpha = 0.3) +
+  geom_bar(data = data_frame(round_once_x = density(roundoffs_2,n=20)$x,
+                             round_once_y = density(roundoffs_2,n=20)$y),
+           mapping = aes(x = round_once_x,y = round_once_y),
+           stat = "identity",
+           colour = "black",
+           fill = "orange",
+           alpha = 0.3) +
+  stat_function(fun = dnorm,args = list(mean = 0,sd = sqrt(n/12)),colour = "purple") +
+  stat_function(fun = dunif,args = list(min = -.5,max = .5),colour = "orange") +
+  scale_x_continuous(breaks = seq(-4,4,by = 0.5)) +
+  labs(title = "Comparison of Simulated Roundoff Errors by Two Methods",
+       subtitle = "Purple: Rounding every number - Orange: Rounding once, at the end",
+       x = "Observed Roundoff Error",
+       y = "Density")
+
+```
+
+We see two things: the central limit theorem applies very well in this case even when $n = 10$; and rounding once at the end is almost certainly a better strategy than rounding every number before summing! We can see this analytically as well; while both strategies have the same *expected* roundoff error, the error when rounding every summand has a higher variance for any $n > 1$, and is technically unbounded, where as the error from rounding once must necessarily be bounded on $(-0.5,0.5)$.
