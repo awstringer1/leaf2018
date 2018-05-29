@@ -1,0 +1,321 @@
+---
+title: "Resampling Methods"
+subtitle: "An Introduction to Simulation and Plotting with R"
+author: "Alex Stringer"
+date: '`r Sys.Date()`'
+output: 
+  html_document:
+    toc: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup-noshow, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r setup-show,include=TRUE}
+# Load the tidyverse packages
+suppressMessages({
+  suppressWarnings({
+    library(tidyverse)
+  })
+})
+```
+
+*Purpose*: This tutorial is designed to introduce students to basic `R` programming concepts including loops, data structures, and plotting with `ggplot`, as well as basic data processing. This is achieved through an introduction to resampling techniques, first on simulated data and then on data from the TTC on station-level aggregated daily ridership.
+
+*Nessesary background*: estimation and sampling distributions of estimators, probability including mean and variance.
+
+# Resampling Techniques
+
+The classical approach to inference taught in many introductory courses is: make an assumption about the distribution of the data, analytically derive an appropriate estimator for your parameter of interest, and analyze properties of that estimator in repeated sampling by looking at its sampling distribution.
+
+This works well in situations where we are able to derive the sampling distribution of our estimator, either exactly or using a central limit theorem of some kind. This is possible in most commonly-studied cases: using the maximum likelihood estimator for regular distributions, and when the estimator is a sum of independent quantites. In both cases, a central limit theorem allows us to approximate the sampling distribution of our estimator using a normal distribution.
+
+There are some situations in which we can't use a central limit theorem, for example when the estimator is not a sum or an appropriate MLE, and when we are estimating properties of a sample that aren't directly estimating any parameter, like if testing a dsitributional assumption.
+
+Suppose we had a random sample of size $n$ from a $Unif(0,\theta)$ distribution, and we wish to estimate $\theta$. For various reasons, a potential estimator is the *sample maximum*, 
+\[
+\hat{\theta} = X_{(n)} \equiv max(X_{1},\ldots,X_{n})
+\]
+This is not a sum of independent random variables, and it is an MLE, but not of a regular distribution. How to analyze its properties in repeated sampling?
+
+This example is simple enough that we do actually have an exact answer: $X_{(n)} \overset{d}{=} \theta U_{n}$, with $U_{n} \sim Beta(n,1)$. But this is a specific result that must be derived for every new situation we come across. Can we develop a more general method that would work in any situation?
+
+## Parametric Resampling
+
+Consider what the "sampling distribution" of an estimator actually refers to: if we repeated our data collection experiment many times and computed our estimator for each new sample, we would observe a range of values for our estimator. Since the samples are random, the estimator for each is a realization of a random variable, and we call its *probability distribution* the *sampling distribution of the estimator*. We then use this notion to describe how likely or unlikely our sample was, given particular values of the parameters.
+
+In this example, we know the distribution from which the underlying data is generated. Let's see how we can use `R` to explicitly implement this notion of repeated sampling. We need to
+
+- Decide on the number $B$ and size $n$ of samples to take, as well as a true value of $\theta$ to use
+- For $b = 1\ldots B$:
+  - Simulate a sample of size $n$ from a $Unif(0,\theta)$ distribution
+  - Compute the maximum of this sample, and store it in the $b^{th}$ position of a vector we create to hold the output of this procedure
+- Analyze the resulting sample from the *sampling distribution* of $X_{(n)}$
+
+To do this in `R`, we are going to
+
+- Set variables `B`, `n`, and `theta` to prespecified values that we choose
+- Define a `numeric` vector of length `B` to store the results of the simulation
+- Use a `for` loop to iterate from `b = 1 to B`, and each time:
+  - Take a random sample of size `n` from a $Unif(0,\theta)$ distribution using the `runif` function
+  - Compute the maximum of this sample using the `max` function
+  - Store the result in the `bth` position of our output vector, using subsetting `[b]` and assignement `<-`
+- Make a histogram of the resulting values using `ggplot`, and overlay the theoretical density curve of the sampling distribution of $X_{(n)}$
+
+While it may seem tedious, laying out the steps of your algorithm before coding it up is a great way to end up with clean, correct code. Let's give it a try.
+```{r uniform-1}
+# Set the random number generator seed, so we get the same random numbers every time we run the code
+# This is just for reproducibility of the example
+set.seed(308479)
+# Define necessary variables
+B <- 10000 # Number of simulations to do
+n <- 10 # Size of each sample
+theta <- 2 # True value of theta
+
+# The numeric() function defines a numeric vector of specified length
+outputvec <- numeric(B)
+
+# Perform the iteration using a for loop
+for (b in 1:B) {
+  # Take a random sample, and its maximum, and assign it to the bth element of outputvec, all in one line
+  outputvec[b] <- max(runif(n,0,theta))
+}
+
+# At this point, do a sanity check. Analytical calculations using the beta distribution above give
+# E(max(X)) = (n-1)/n * theta:
+mean(outputvec) * (n/(n-1)) # Approximately equals theta
+# ...and Var(outputvec) = n / ( (n+1)^2 * (n+2) ) * theta^2
+var(outputvec) * ( (n+1)^2 * (n+2) ) / n # Approximately equals theta^2
+# These quick checks check out; of course this doesn't mean we did it right, but checking the first couple
+# moments of your results are a good way to quickly see whether you made any big mistakes
+
+```
+
+Now that we have our simulated sampling distribution of $X_{(n)}$, we would like to visualize it. The `ggplot` function in the `ggplot2` package is the current state-of-the-art method for plotting data in `R`. Base `R` graphics produce messy plots and should be avoided.
+
+`ggplot`s are built up in *layers*. Here is a description of how we'll build our histogram with overlayed density curve:
+
+  - Start by putting the simulation data in a `data_frame`. A `data_frame` is a matrix-like structure which stores data in named columns. `ggplot` takes in one of these, and then allows you to refer to variables by name while building the plot
+  - Pass the `data_frame` to the `ggplot` function, and specify a `mapping` of variables to plot elements using the `aes` function (which stands for *aesthetic*, as in *aesthetic mapping*)
+  - Add `theme`s to make the plot pretty
+  - Add a `geom_histogram`. Every plot has a `geom`etric object on it, like a point or a line or a bar, and a `stat`istical transform of the data. The `geom_histogram` `ggplot` function computes all the necessary elements of a histogram (bar heights, widths, and locations) and plots the corresponding bars
+  - Add a line representing the theoretical density of $X_{(n)}$, which from above we know to be distributed as $\theta U_{n}, U_{n} \sim Beta(n,1)$. To do this, we create a new dataframe containing this density evaluated at a bunch of points, and then plot a `geom_line` through these points
+  - Annotate the plot: add a title and axis labels, maybe change around the data labels on the axes, and so on
+
+Here is a complete example of the above. You can run the code line-by-line yourself in order to see the output at each stage, and therefore understand what each line adds.
+
+```{r uniform-2}
+data_frame(sim = outputvec) %>% # Create a dataframe with one variable, sim, equal to outputvec
+  ggplot(aes(x = sim)) + # Map the "x" plot attribute to the "sim" variable in the data_frame
+  theme_classic() + # Add a preset theme
+  geom_histogram(aes(y = ..density..),colour = "black",fill = "orange",bins = 100,alpha = 0.7) + # The aes(y = ..density..) rescales the height of the bars so they match the density values below
+  geom_line(data = data_frame(x = seq(min(outputvec),max(outputvec),by=0.01),
+                              y = (1 / theta) * dbeta(x/theta,n,1)),
+            mapping = aes(x = x,y = y,group = 1),
+            colour = "purple") + # See below for description of this line
+  labs(title = "Simulated vs Theoretical Sampling Distribution of Sample Max",
+       subtitle = "Uniformly distributed sample. Purple line = true density of sample max",
+       x = "Simulated Sample Maximum",
+       y = "Density")
+
+```
+
+The result is a clean, professional-quality plot. We see that the observed sampling distribution from the simulations closely matches the theoretical density curve of the sampling distribution of the sample maximum.
+
+Each line in the above plot code is relatively simple, with the exception of the line that plots the theoretical density. For that, we had to
+
+  - Create a new dataframe, containing a sequence of closely-spaced points covering the range of the histogram, and the density evaluated at those points. Don't overthink this; the spacing of the points just makes the line look nice and smooth
+  - Evaluate the density. Because our random variable is $Y = \theta U_{n}$, the density is obtained by transformation: $f_{y}(y) = (1/theta)f_{u}(y/\theta)$. The $f_{u}(u)$ is a $Beta(n,1)$ density, obtained in `R` using the `dbeta` function
+  - Set a new aesthetic mapping for these newly created data
+  
+Note that it's not always this complicated; if you need to plot a standard density without transformation in `ggplot`, try the `stat_function` `ggplot` command.
+
+## Non-parametric Resampling
+
+That's all well and good in the case where we know, or are willing to assume, the underlying distribution of our observed sample. But what if we don't know this? The more common case in data analysis is that we have a sample of some kind, and very little other information. We propose an estimator of some quantity; with no knowledge of the underlying distribution of the data, we can't in general come up with a procedure for deriving the sampling distribution of our estimator. Or, we may wish to test whether assumptions we have made are valid, e.g. if we used a central limit theorem but aren't sure whether our estimator really is a sum of *independent* quantities.
+
+Suppose we have the following sample:
+```{r nonparam-1}
+set.seed(241078)
+one_sample <- runif(10)
+print(one_sample)
+```
+and we aren't ready to assume anything about its distribution. Analagous to the previous example, we want to estimate the population maximum. We propose to use the sample maximum. Can we say anything about the sampling distribution of this quantity? Can we compute its mean and variance across repeated samples?
+
+Yes. The key is to use **non-parameteric** resampling techniques. We will take repeated samples as in the parametric case, except instead of being generated independently from a known parametric distribution, we will take **repeated samples of size n from our original data, sampling with replacement**. We then proceed as if these were independent random samples from the same population.
+
+Though it feels like "cheating", in practice the *bootstrap* as described here works very well for estimating most things, and there is a ton of theory supporting why.
+
+Let's give it a go. With such a small $n$, we expect the results to be "chunky", since there are only $n = 10$ actual values that the sample maximum could equal.
+```{r nonparam-2}
+set.seed(98796)
+n <- length(one_sample) # Now n is set by the observed data
+B <- 10000
+theta_est <- max(one_sample) # In-sample estimate of theta
+
+outputvec <- numeric(B)
+
+for (b in 1:B) {
+  outputvec[b] <- max(sample(one_sample,n,replace = TRUE))
+}
+
+data_frame(sim = outputvec) %>%
+  ggplot(aes(x = sim)) +
+  theme_classic() +
+  geom_bar(stat = "count",colour = "black",fill = "orange") +
+  geom_vline(xintercept = theta_est,colour = "purple") +
+  labs(title = "Nonparametric Resampled Distribution of Sample Maximum",
+       subtitle = "n = 10. Purple line = observed sample maximum",
+       x = "Resampled Sample Maximum",
+       y = "Count") +
+  scale_y_continuous(labels = scales::comma_format())
+```
+
+Most of the samples do hit the observed sample maximum. Even with such a small sample size though, the distribution is starting to look like the theoretical result (which in this case we still know to be $Beta(n,1)$, since the observed data was uniform). We can get an idea of the mean and variance of the sample maximum in repeated sampling by computing the mean and variance of our resampled statistics:
+```{r nonparam-3}
+mean(outputvec)
+var(outputvec)
+```
+
+In the absence of theoretical results, being able to gauge the mean and variance of an arbitrary estimator is pretty useful.
+
+Let's try it again, increasing the sample size:
+
+```{r nonparam-4}
+set.seed(4208)
+one_sample <- runif(100)
+n <- length(one_sample) # Now n is set by the observed data
+B <- 10000
+theta_est <- max(one_sample) # In-sample estimate of theta
+
+outputvec <- numeric(B)
+
+for (b in 1:B) {
+  outputvec[b] <- max(sample(one_sample,n,replace = TRUE))
+}
+
+data_frame(sim = outputvec) %>%
+  ggplot(aes(x = sim)) +
+  theme_classic() +
+  geom_histogram(bins=30,colour = "black",fill = "orange") +
+  geom_vline(xintercept = theta_est,colour = "purple") +
+  labs(title = "Nonparametric Resampled Distribution of Sample Maximum",
+       subtitle = "n = 100. Purple line = observed sample maximum",
+       x = "Resampled Sample Maximum",
+       y = "Count") +
+  scale_y_continuous(labels = scales::comma_format()) +
+  scale_x_continuous(breaks = seq(0.85,1,by=0.01))
+
+
+mean(outputvec)
+var(outputvec)
+
+```
+The distribution becomes more and more concentrated around the true value as the sample size increases. The mean approaches the true value, and the variance gets lower.
+
+Such nonparametric resampling is a fundamental modern skill to have; understand the above algorithm, and you have a surefire way to check your homework answers in theory courses!
+
+# Real Data Example
+
+For an example using real data, consider the dataset on TTC subway ridership by station, available from [Open Data Toronto](https://www.toronto.ca/city-government/data-research-maps/open-data/open-data-catalogue/#75d6b4a2-7f29-b0df-f1eb-cc5bc7f53b68), and stored [on github](https://github.com/awstringer1/sta261s18supplementary/blob/master/datasets/ttc-subway-2015.csv) for your convenience. The dataset contains one weekday's worth of passenger counts for each of the TTC's 69 subway stations. You can find another tutorial using this dataset [here](http://awstringer1.github.io/leaf2018/sta261-lecture5-sampling-distributions).
+
+Suppose we are interested in the distribution of total weekdaily ridership on the subway system. We only have a single day's worth of data, however, the total ridership is a sum of the ridership at each station- hence it is a sum of random variables, and a Central Limit Theorem applies!
+
+Or does it? Are the riderships at each station *statistically independent*? We don't have enough information on the joint distribution of station ridership to answer this question with data. The question itself, though, is not the primary focus of the analysis; the primary focus is whether a central limit theorem can be applied to the total ridership across stations.
+
+To be ore specific, let $R_{i}$ denote the ridership at the $i^{th}$ station, for any single weekday, and let $r_{i$}$ denote the ridership observed in our single day of data. We are interested in the *total ridership* on a given weekday,
+\[
+S = \sum_{i=1}^{Q}R_{i}
+\]
+where $Q = 74$ is the number of stations (69, plus 5 transfer stations are counted as two distinct stations). We estimate $S$ in our data by
+\[
+s = \sum_{i=1}^{Q}r_{i}
+\]
+Is $s$ a realization of a normal random variable, as implied by the relevant central limit theorem?
+
+We can use nonparametric resampling to investigate this. First let's read in the data, using the `readr` package. The data can be downloaded from github and read in using a single command. First, go to the above link and look at the data in the web browser; you need to know what you are reading in. Then, you can read in the data as follows:
+```{r ttc-1}
+ttc <- readr::read_csv("https://raw.githubusercontent.com/awstringer1/sta261s18supplementary/master/datasets/ttc-subway-2015.csv") %>%
+  dplyr::select(-starts_with("X")) %>%
+  filter(!is.na(total)) %>%
+  filter(station != "Grand Totals")
+glimpse(ttc)
+```
+
+The above code
+
+  - Reads the data from `csv` (comma-separated values) format, a text-based format, into `R` using the `read_csv` command in the `readr` package
+  - Removes those blank variables you saw on the righthand side when you looked at the data on github
+  - Removes blank rows, and the row containing the pre-computed total (this is not a datapoint; we can compute this summary in `R`)
+
+The `glimpse` function gives you a concise sideways view of the read-in data, including all the variables and their types, how many observations and variables there are in the dataframe, and the first few rows of data.
+
+We can compute the total, $s$, as follows:
+```{r ttc-2}
+estimated_total <- ttc %>%
+  summarize(total = sum(total)) %>%
+  pull(total)
+
+estimated_total
+```
+We see about $2.6$ million people rode the subway on this day. But how can we begin to estimate the mean and variance of this total? Or whether it is a realization of a normal random variable? How can we answer questions like "what is the probability that more than 3 million people will ride the TTC in any given day?"?
+
+We can see whether applying a central limit theorem to the sum of station-level riderships is a good idea by applying the same nonparametric resampling described above.
+```{r ttc-3}
+set.seed(87321)
+n <- nrow(ttc)
+B <- 10000
+outputvec <- numeric(B)
+
+for (b in 1:B) {
+  outputvec[b] <- sum(sample(ttc$total,n,replace = TRUE))
+}
+
+data_frame(sim = outputvec) %>%
+  ggplot(aes(x = sim)) +
+  theme_classic() +
+  geom_histogram(aes(y = ..density..),bins=100,colour = "black",fill = "orange") +
+  geom_vline(xintercept = estimated_total,colour = "purple") +
+  stat_function(fun = dnorm,args = list(mean = mean(outputvec),sd = sd(outputvec)),colour = "blue") +
+  labs(title = "Nonparametric Resampled Distribution of Total Weekdaily Ridership",
+       subtitle = "TTC Subway Ridership data. Purple line = observed sample total. Blue curve = fitted normal distribution",
+       x = "Resampled Sample Total",
+       y = "Density") +
+  scale_y_continuous(labels = scales::comma_format()) +
+  scale_x_continuous(breaks = seq(round(min(outputvec),-5),round(max(outputvec),-5),by=500000),labels = scales::comma_format())
+
+
+mean(outputvec)
+sd(outputvec)
+```
+
+Magic! Our central limit theorem normal approximation fits remarkably well. We can use the resampled data directly to estimate desired statistics, like the mean and standard deviation of the total above. We can immmediately answer "what is the probability that more than 3 million people will ride the TTC in one day?" just by looking at the relative frequency with which this happens in the resamples:
+```{r ttc-4}
+mean(outputvec > 3000000)
+```
+Compare this to the approximation using the Central Limit Theorem:
+```{r ttc-5}
+1 - pnorm(3000000,mean = mean(outputvec),sd = sd(outputvec))
+```
+
+Very close. Note that we used the resampled mean and standard deviation in the fitted normal distribution, so the above does **not** check whether the parameters of the normal distribution are reasonable, it only checks whether the normal distribution with these parameters provides good approximate probabilities.
+
+A final note on working with real data: do a google search for "ttc daily ridership", and/or look at the wikipedia article for the TTC. What do you see? I see a wide range of estimates of daily ridership on a weekday, and mostly they are not close to what we have here. What's the deal?
+
+This is one of the most commonly seen problems when analyzing observational datasets that were compiled for some reason other than the analysis you are actually performing: *documentation*. Available documentation for any given data source, whether it is public and open or industrial and private, is often
+
+  - Messy
+  - Unclear
+  - Contradictory (there are 5 data dictionaries, and they all say different things!)
+  - Absent (no documentation exists; "how did they come up with that number?")
+
+*Never believe an undocumented summary statistic*! At best, it will be out of context and at worst, it will be incorrect. Members of the general public reading media reports may wish to believe whatever numbers are shown, but as statisticians it is your job to go deeper, and figure out exactly what data and summary operations went in to calculating the numbers that you see.
+
+So why didn't I immediately stop this exercise when I saw that my numbers were double what the TTC's wikipedia page says? Because those numbers have no context around them, and neither do mine! For example, here are two very plausible explanations for the discrepency:
+
+  - My ridership numbers are double-counted because they include people entering *and* exiting subway stations. We could test this by repeating the analysis on the `to_trains` numbers only; this would be pretty simple to do (so try it!)
+  - The TTC's numbers are only counting *fares*, so people who took a bus to the subway aren't being counted
+
+The point is, you have to think crtically and dig deep to figure out the context behind your analysis, and what you expect to see.

@@ -107,7 +107,7 @@ ttc <- readr::read_csv("https://raw.githubusercontent.com/awstringer1/sta261s18s
   dplyr::select(-starts_with("X")) %>%
   filter(!is.na(total)) %>%
   filter(station != "Grand Totals")
-ttc
+glimpse(ttc)
 ```
 The `total` column is the total number of riders on a "typical" weekday (we don't know the ttc's definiton of "typical"). The `to_trains` and `from_trains` are the number of riders boarding and disembarking from trains at each station.
 

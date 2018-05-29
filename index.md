@@ -21,6 +21,20 @@ Worked example from Horton (2013): probability problem with empirical and analyt
 ## Examples of Student-Facing Materials
 Examples of materials that can be worked on with students as part of a course. Each item has an example of a course in which it could be used, with **bold** indicating a course in which it *has* been used. Also included are example Intended Learning Outcomes that the material might relate to. These are aligned with the Statistics Undergraduate Program Learning Outcomes.
 
+### Student Tutorials
+Materials that are designed to walk students through a statistical concept and the associated `R` skills for implementing it. This is distriguished from **Lecture Supplements** below by the detail in which the `R` code is covered; the **Student Tutorials** are designed to teach `R`, while the **Lecture Supplements** are mostly examples of using `R`.
+
+[Resampling Methods](http://awstringer1.github.io/leaf2018/resampling-methods.html)
+
+  - `R` concepts covered: simulation, loops, `ggplot`
+  - Statistical concepts covered: parametric and non-parametric resampling methods
+  - Necessary background: sampling distributions fo estimators, basic probability including expectation and variance
+  - Description: a walkthrough of resampling methods, beginning with an artificial example of investigating the sampling distribution of the sample maximum for a) a uniform distribution and b) an unknown distribution, and concluding with an application of resampling for estimating the distribution of daily subway ridership from a real TTC dataset containing only a single day of station-level ridership counts
+  - Intended Learning Outcomes:
+    - Create intermediate level plots in `ggplot` to compare empirical and theoretical distributions (**Methods**)
+    - Simulate to verify theoretical calculations, and understand the concept of a sampling distribution/repeated sampling (**Computational Thinking**)
+    - Source, read in, and analyze a real dataset from Open Data Toronto; ask appropriate questions, and think critically about how data is reported online and in the media (**Real-World Problems**)
+
 ### Lecture Supplements
 Materials that can be used during lecture as a supplement to traditional slides and blackboard writing.
 
@@ -30,7 +44,7 @@ Materials that can be used during lecture as a supplement to traditional slides 
   - Description: simulate from the binomial distribution and plot the results; compare normal density curve; compute approximate binomial probabilities using the normal distribution
   - Intended Learning Outcomes:
     - Create simulations in `R` to investigate theoretical results (**Computational Thinking**)
-    - Plot univariate data using `ggplot` (**Methods**); interpret plots in the context of a problem and decide on further analysis (**Real World Problems**)
+    - Plot univariate data using `ggplot` (**Methods**); interpret plots in the context of a problem and decide on further analysis (**Real-World Problems**)
 
 [Central Limit Theorem: application in analyzing roundoff error](http://awstringer1.github.io/leaf2018/lecture-1-clt-roundoff-error.html)
 
@@ -46,8 +60,8 @@ Materials that can be used during lecture as a supplement to traditional slides 
   - Description: illustration of the application of the Method of Moments to data; plot a histogram of rainfall data, guess the family of distributions based on shape; estimate their parameters using the Method of Moments and plot the resulting curve; qualitatively evaluate the fit 
   - Intended Learning Outcomes:
     - Read several datasets into `R`, merge them, and evaluate the integrity of the resulting data (**Computational Thinking**)
-    - Plot univariate data using `ggplot` (**Methods**); interpret plots in the context of a problem and decide on further analysis (**Real World Problems**)
-    - Choose a family of distributions based on a plot and estimate the parameters of this distribution (**Methods**); critique the quality of the fitted model qualitatively through intepreting visualizations (**Real World Problems**)
+    - Plot univariate data using `ggplot` (**Methods**); interpret plots in the context of a problem and decide on further analysis (**Real-World Problems**)
+    - Choose a family of distributions based on a plot and estimate the parameters of this distribution (**Methods**); critique the quality of the fitted model qualitatively through intepreting visualizations (**Real-World Problems**)
 
 [Simulating Likelihood Functions](http://awstringer1.github.io/leaf2018/sta261-lecture4-simulating-likelihood.html)
 
@@ -66,7 +80,7 @@ Materials that can be used during lecture as a supplement to traditional slides 
     - Be able to apply maximum likelihood estimation to random samples from a known density with one or two unknown parameters (**Methods**)
     - Understand the definition of the likelihood function as the probability that the chosen model and parameters assign to the observed data (**Theory**)
     - Apply maximum likelihood estimation in cases where no closed-form solution exists and numerical optimization must be used (**Methods**)
-    - Fit frequency curves to data using the method of maximum likelihood (**Real World Problems**)
+    - Fit frequency curves to data using the method of maximum likelihood (**Real-World Problems**)
     
 [Sampling Distributions of Estimators](http://awstringer1.github.io/leaf2018/sta261-lecture5-sampling-distributions)
 
@@ -74,8 +88,8 @@ Materials that can be used during lecture as a supplement to traditional slides 
   - Description: introduction to the concept of a sampling distribution of an estimator. First do a simulated normal distribution example, illustrating the concept of repeated sampling and comparing the theoretical sampling distribution of the mean with the empirical. Then a real data example: using data on aggregated subway station-level ridership from the TTC, apply the central limit theorem to total ridership summed across stations to evaluate a (fictional) claim that the TTC has 3,000,000 riders on an average weekday. Includes brief discussion of the assumptions required to do this.
   - Intended Learning Outcomes:
     - Simulate repeated sampling to understand this concept, and compare theoretical and empirical results (**Computational Thinking**)
-    - Source data from Open Data Toronto and use it, combined with appropriate methodology, to answer an actual question (**Real World Problems**)
-    - Think critically about whether a particular statistical methodology (CLT) is appropriate for answering a particular question on a particular dataset (**Theory**,**Real World Problems**)
+    - Source data from Open Data Toronto and use it, combined with appropriate methodology, to answer an actual question (**Real-World Problems**)
+    - Think critically about whether a particular statistical methodology (CLT) is appropriate for answering a particular question on a particular dataset (**Theory**,**Real-World Problems**)
     
 ### Learnr Tutorials
 Hosted tutorials on course concepts writtedn using the **learnr** package in R.
