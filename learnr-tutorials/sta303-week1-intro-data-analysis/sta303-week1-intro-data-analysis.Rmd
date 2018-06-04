@@ -1,17 +1,16 @@
 ---
 title: "STA303 S18 Week 1: Introductory Data Analysis"
-output: 
-  learnr::tutorial:
-    progressive: true
-    allow_skip: true
+output: learnr::tutorial
 runtime: shiny_prerendered
 ---
 
 ```{r setup, include=FALSE}
-require(learnr)
-require(tidyverse)
-require(faraway)
-require(corrplot)
+library(learnr)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(faraway)
+library(corrplot)
 knitr::opts_chunk$set(echo = FALSE)
 
 data(gavote)

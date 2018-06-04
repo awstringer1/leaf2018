@@ -96,7 +96,7 @@ Hosted tutorials on course concepts writtedn using the **learnr** package in R.
 
 (STA261): [Learnr tutorial on Law of Large Numbers and simulating random variables in R](http://underdog.utstat.toronto.edu:3838/stringer/law-of-large-numbers-simulation)
 
-(STA303): [Learnr tutorial involving fairly complete analysis of a textbook dataset](https://awstringer1.shinyapps.io/sta303-week1-intro-data-analysis/)
+(STA303): [Learnr tutorial involving fairly complete analysis of a textbook dataset](http://underdog.utstat.toronto.edu:3838/stringer/intro-data-anlaysis-faraway)
 
 # Datasets
 Below is a collection of readily available datasets that instructors can use for examples, assignments, and tests. The table includes a description of the dataset, the source, and key features/suggested uses. When the dataset is from an R package, the documentation within that package will provide a qualitative description of the data; here I focussed on only the statistical qualities of the data (e.g. how many variables, data types, and so on) to make it easy to browse the list for a dataset that fits your particular needs. In cases when the dataset is not from an already-documented R package, a bit more context is provided.
