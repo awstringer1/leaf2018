@@ -35,6 +35,18 @@ Materials that are designed to walk students through a statistical concept and t
     - Simulate to verify theoretical calculations, and understand the concept of a sampling distribution/repeated sampling (**Computational Thinking**)
     - Source, read in, and analyze a real dataset from Open Data Toronto; ask appropriate questions, and think critically about how data is reported online and in the media (**Real-World Problems**)
 
+[Predictive Modelling](http://awstringer1.github.io/leaf2018/prediction-rossman-store-sales.html)
+
+  - `R` concepts covered: reading in data from delimited flat files; basic joins; feature engineering and preprocessing; basic prediction and evaluation
+  - Statistical concepts covered: introduction to the mechanics of predictive modelling using real-world data, including reading and cleaning data, creating features, preprocessing and initial data analysis.
+  - Necessary background: `R` and data analysis skills at the level of STA302 should be sufficient
+  - Description: a full walkthrough of the steps necessary to preprocess a dataset for fitting a predictive model. The datasets used are from the [Rossman Store Sales Kaggle competition](https://www.kaggle.com/c/rossmann-store-sales/), with the goal being to predict daily drugstore sales. The problem is not trivial, but not that difficult, and the tutorial goes over reading in and merging the datasets, featufe engineering and preprocessing, how to train/validation/test split given the structure of the data, fit the simplest possible model, score the test data, and format and submit the results to Kaggle.
+  - Intended Learning Outcomes:
+    - Work with large datasets representative of what might be encountered in real-world predictive modelling; understand that predictive modelling outside of textbook contexts is difficult and includes lots of tedious and boring initial work before the fun part of fitting models (**Real-World Problems**)
+    - Programatically make graphs of many variables efficiently with `ggplot` and `purrr::map` (**Methods**)
+    - Manipulate data of moderate size (> 1M rows) and complexity (**Computational Thinking**)
+
+
 ### Lecture Supplements
 Materials that can be used during lecture as a supplement to traditional slides and blackboard writing.
 
