@@ -1,0 +1,389 @@
+---
+title: "Bayesian Statistics"
+author: "Alex Stringer"
+date: '`r Sys.Date()`'
+output: 
+  html_document:
+    toc: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup-noshow, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r setup-show,include=TRUE}
+# Load the tidyverse packages
+suppressMessages({
+  suppressWarnings({
+    library(tidyverse)
+  })
+})
+```
+
+This tutorial introduces Bayesian statistics from a practical, computational point
+of view. Less focus is placed on the theory/philosophy and more on the mechanics
+of computation involved in estimating quantities using Bayesian inference. Students
+completing this tutorial will be able to fit medium-complexity Bayesian models to
+data using MCMC.
+
+Topics covered:
+
+  - 
+
+
+# Introduction
+
+Given data generated from some family of probability distributions indexed by unknown parameter, statistical inference is concerned with **estimating** these parameters- finding reasonable values for them, given the observed data. The central notion is that of *uncertainty*: we simply don't know the values of the parameters that generated the data we observed, and we do know that several different values could reasonably have generated these data. **Probability** is the mathematical construct used to represent uncertainty.
+
+## Frequentist Perspective
+
+Classically, the approach to this problem is taught from the **frequentist perspective**. Uncertainty in the values of the parameters that generated the data is represented by probability via the notion of *repeated sampling*: under the given probability model with the given parameter values, what is the relative frequency with which these same data would be observed, if the experiment that generated the data were repeated again and again? Values of the parameters that have a higher probability of having generated the observed data are thought to be more likely than other values.
+
+As an example, consider a coin with unknown probability of heads $\theta$. We toss the coin once, and observe random outcome (data) $X = 1$ if the toss is heads and $X = 0$ if not. For simplicity, suppose we know we have chosen one of two possible coins, either having $\theta = 0.7$ or $\theta = 0.3$. How do we use the observed data to infer which of these two coins we threw?
+
+For any $0 < \theta < 1$, the probability distribution of the single coin toss is given by
+\[
+P(X = x) = \theta^{x}(1-\theta)^{1-x}
+\]
+This just says that $P(X = 1) = \theta$ and $P(X = 0) = 1-\theta$.
+
+Let's say we throw the coin once, and observe $X = 1$. If $\theta = 0.7$ the probabilty of observing this result is $P(X = 1|\theta = 0.7) = 0.7$. That is if $\theta = 0.7$, we would expect roughly $70\%$ of repetitions of this experiment to yield the same results as we observed in our data. If $\theta = 0.3$ on the other hand, $P(X = 1|\theta = 0.3) = 0.3$; only $30\%$ of the repetitions of this experiment would yield the observed data if $\theta = 0.3$. Because $\theta = 0.7$ would yield the observed data more frequently than $\theta = 0.3$, we say that $\theta = 0.7$ is *more likely* to have generated the observed data than $\theta=0.3$, and our inference favours $\theta =0.7$.
+
+For a more comprehensive background on frequentist/likelihood inference, check out the tutorial on [maximum likelihood](http://awstringer1.github.io/leaf2018/sta261-lecture4-maximum-likelihood.html).
+
+## Bayesian Perspective
+
+One criticism of the above approach is that is depends not only on the observed data, but also on infinitely many other possible datasets that are not observed. This is an artifact of the manner in which probability is used to represent uncertainty. In contrast, Bayesian statistics represents uncertainty about the value of a parameter **directly** using probability distributions.
+
+In particular, a **prior distribution** is placed on the parameter, representing the probable values of that parameter before data is observed. Having observed the data, the prior is updated via *Bayes' Rule*, yielding the **posterior distribution** of the parameter, given the data. The choice of prior distribution is based either on subject-matter knowledge or mathematical convenience, and is a subjective choice on the part of the analyst.
+
+To see how this works, suppose that we think about $4/5$ coins in our pocket are the $\theta = 0.3$ coins, and only $1/5$ are the $\theta = 0.7$ coins. Our prior distribution on $\theta$ is then
+\[
+P(\theta = q) = 0.2^{I(q = 0.7)}0.8^{I(q = 0.3)}
+\]
+where $I(q = 0.7) = 1$ if $q = 0.7$ and $0$ otherwise. This, like the probability distribution of the actual result of the coin toss, just encodes our notion that $P(\theta = 0.3) = 0.8$ and $P(\theta = 0.7) = 0.2$.
+
+So without knowing the result of the coin toss, we think there is a $20\%$ chance that $\theta = 0.7$. We know from above that if we observe heads on the coin toss, we have observed a result that would occur about $70\%$ of the time if $\theta = 0.7$. In probability terms, we have a *marginal* distribution for $\theta$, and a *conditional* distribution for $X|\theta$.
+
+These two ideas are combined by computing the conditional distribution of $\theta|X$, known as the **posterior distribution** for $\theta$ having observed $X$. This is obtained (explaining the name) via *Bayes' Rule*:
+$$
+p(\theta|X) = \frac{p(X|\theta)\times p(\theta)}{p(X)}
+$$
+where the marginal distribution of $X$, or the *normalizing constant* or *marginal likelihood* or *model evidence* (this thing has a lot of names) is given by
+$$
+p(X) = \sum_{\theta}p(X|\theta)\times p(\theta)
+$$
+and ensures $p(\theta|X)$ is a proper probability distribution. 
+
+In our example, the prior probability of $\theta = 0.7$ is only $20\%$. But we flip the coin and observe $X = 1$. We can see how this observation updates our belief about the likely values of $\theta$ by computing the posterior distribution of $\theta$ given the observed data:
+$$
+\begin{aligned}
+&p(\theta|X) = \frac{\theta^{x}(1-\theta)^{1-x}\times 0.2^{I(\theta = 0.7)}0.8^{I(\theta = 0.3)}}{\sum_{\theta = 0.3,0.7}\theta^{x}(1-\theta)^{1-x}\times 0.2^{I(\theta = 0.7)}0.8^{I(\theta = 0.3)}} \\
+\implies& P(\theta = 0.7 | X = 1) = \frac{0.7 \times 0.2}{0.7\times0.2 + 0.3\times0.8} \\
+&= 0.368
+\end{aligned}
+$$
+Before observing heads, we would have thought the $\theta = 0.7$ coin to be very unlikely, but because the observed data favours $\theta = 0.7$ more strongly than $\theta = 0.3$, after observing these data we feel that $\theta = 0.7$ is more likely than before.
+
+# Bayesian Inference
+
+To continue the explanation of the Bayesian approach, we will extend the above simple example in two logical ways:
+
+  - Flip $n > 1$ coins, each with the same probability of heads $0 < \theta < 1$
+  - Consider any $0 < \theta < 1$, not just two single values
+
+## Flipping More Coins
+
+Suppose now that we flip $n$ coins, obtaining a dataset $X = (X_{1},\ldots,X_{n})$ of heads or tails, represented by 0's and 1's. If we're still considering only two candidate values $\theta = 0.7$ or $\theta = 0.3$, we may still ask the question "which value is more likely to have generated the observed data?". We again form the *likelihood function* for each value of $\theta$, the relative frequency with which each value of $\theta$ would have generated the observed sample. Assuming the tosses are statistically independent:
+$$
+p(X|\theta) = \theta^{\sum_{i=1}^{n}X_{i}} \times (1 - \theta)^{n - \sum_{i=1}^{n}X_{i}}
+$$
+where $\sum_{i=1}^{n}X_{i}$ is just the number of heads observed in the sample. We see that any two samples that have the same number of heads will lead to the same inferences about $\theta$ in this manner.
+
+Suppose we throw the coin $10$ times and observe $6$ heads. The likelihood function for each candidate value of $\theta$ is
+$$
+\begin{aligned}
+p(X|\theta = 0.7) &= 0.7^{6} \times 0.3^{4} = 0.000953 \\
+p(X|\theta = 0.3) &= 0.3^{6} \times 0.7^{4} = 0.000175 \\
+\end{aligned}
+$$
+It is much more likely to observe $6$ heads when $\theta = 0.7$ than when $\theta = 0.3$.
+
+In the Bayesian setting, with our prior distribution on $\theta$ from above, we would form the posterior distribution as follows:
+$$
+p(\theta|X) = \frac{\theta^{\sum_{i=1}^{n}x_{i}}(1-\theta)^{n - \sum_{i=1}^{n}x_{i}}\times 0.2^{I(\theta = 0.7)}0.8^{I(\theta = 0.3)}}{\sum_{\theta = 0.3,0.7}\theta^{\sum_{i=1}^{n}x_{i}}(1-\theta)^{n - \sum_{i=1}^{n}x_{i}}\times 0.2^{I(\theta = 0.7)}0.8^{I(\theta = 0.3)}}
+$$
+Computing this for our observed data of $\sum_{i=1}^{10}x_{i} = 6$ yields
+$$
+\begin{aligned}
+p(\theta = 0.7 |X) = \frac{0.7^{6}0.3^{4}\times 0.2}{0.7^{6}0.3^{4}\times 0.2 + 0.3^{6}0.7^4\times0.8} = 0.576 \\
+p(\theta = 0.3 |X) = \frac{0.3^{6}0.7^{4}\times 0.2}{0.3^{6}0.7^{4}\times 0.8 + 0.7^{6}0.3^4\times0.2} = 0.424 \\
+\end{aligned}
+$$
+
+We can see that the data "updates" our prior belief that $\theta = 0.3$ was more probable than $\theta = 0.7$, because the observed data was more likely to have occurred if $\theta = 0.7$ than if $\theta = 0.3$.
+
+It is helpful to visualize the prior and posterior, for the observed data. Because both prior and posterior only allow two values, we can do this using a simple bar chart:
+```{r binomial-vis1}
+visualize_binomial_priorposterior <- function(sumx,n) {
+  prior <- function(theta) {
+    if (theta == .3) {
+      return(.8)
+    }
+    else if (theta == .7) {
+      return(.2)
+    }
+    0
+  }
+  likelihood <- function(theta) theta^sumx * (1-theta)^(n - sumx)
+  marginal_likelihood <- prior(.7) * likelihood(.7) + prior(.3) * likelihood(.3)
+  posterior <- function(theta) likelihood(theta) * prior(theta) / marginal_likelihood
+  
+  # Plot of the prior and posterior distributions for these observed data
+  data_frame(
+    theta = c(.3,.7,.3,.7),
+    value = c(prior(.3),prior(.7),posterior(.3),posterior(.7)),
+    type = c("Prior","Prior","Posterior","Posterior")
+  ) %>%
+    ggplot(aes(x = theta,y = value,fill = type)) +
+    theme_classic() + 
+    geom_bar(stat = "identity",position = "dodge",colour = "black") +
+    labs(title = "Prior and Posterior for theta",
+         subtitle = str_c("Observed data: ",sumx," flips in ",n," throws"),
+         x = "Theta, probability of heads",
+         y = "Prior/Posterior Probability",
+         fill = "") +
+    scale_x_continuous(breaks = c(0.30,0.70),labels = c("0.30","0.70")) +
+    scale_y_continuous(labels = scales::percent_format()) +
+    scale_fill_brewer(palette = "Reds")
+  
+}
+```
+
+Plotting is nice as it lets us compare how different observed data, and different experiments (number of throws) affect the prior/posterior balance of belief:
+
+```{r binomial-vis2,fig.height=10}
+cowplot::plot_grid(
+  visualize_binomial_priorposterior(6,6),
+  visualize_binomial_priorposterior(6,10),
+  visualize_binomial_priorposterior(6,20),
+  visualize_binomial_priorposterior(6,50),
+  visualize_binomial_priorposterior(0,10),
+  visualize_binomial_priorposterior(1,10),
+  visualize_binomial_priorposterior(7,10),
+  visualize_binomial_priorposterior(10,10),
+  ncol=2
+)
+```
+
+## Estimating $\theta$
+
+The case where there are only two possible parameter values is useful for examples, but not common in practice. More realistic is the case where $0 < \theta < 1$, and we need to use the observed data to *estimate* $\theta$.
+
+Intuition and frequentist results dictate that a "good" estimator of $\theta$ is the sample proportion number of heads,
+$$
+\hat{\theta}_{freq} = \frac{1}{n}\sum_{i=1}^{n}X_{i}
+$$
+This just makes sense; of course the best guess of the value of the *probability* of heads based on one sample is just the relative frequency with which $X$ is heads in that sample.
+
+
+### The Prior
+
+Bayesian inference proceeds as above, with the modification that our prior must be continuous and defined on the unit interval $(0,1)$. This reflects the fact that our parameter can take any value on the interval $(0,1)$. Choosing this is a subjective decision, and is slightly more difficult in the continuous case because interpreting densities is harder than interpreting discrete probability mass functions. In a nutshell, we should choose our prior distribution such that values of $\theta$ that we think are reasonable have high probability under the prior, and values of $\theta$ that we think are not reasonable have low probability under the prior. There is a lot more that goes into the choice of prior in more complicated applied problems; we'll keep it simple for now.
+
+A popular choice for a prior for a binomial likelihood like we have here is the **beta distribution**,
+$$
+\begin{aligned}
+\theta &\sim Beta(a,b) \\
+f(\theta;a,b) &= \theta^{a-1}(1-\theta)^{b-1}, 0 < \theta < 1, a > 0, b > 0 \\
+E(\theta) &= \frac{a}{a+b} \\
+Var(\theta) &= \frac{ab}{(a+b)^2 (a+b+1)}
+\end{aligned}
+$$
+The Beta distribution is defined on $0,1$ and itself has two parameters $a,b$ which control the shape of the distribution, and its moments. If a parameter having a mean and variance makes you uncomfortable at first, try interpreting these quantities less literally; the mean is just the "centre" of the possible values of $\theta$ as weighted by their probabilities, and the variance (or more accurately, the standard deviation) roughly describes the size of the region around the mean in which $\theta$ is likely to fall.
+
+Let's visualize the prior distribution in order to help us specify the parameters $a,b$ that will give us a reasonable prior:
+```{r betaprior-vis1,fig.width=20,fig.height=20}
+# Generate plot data- dbeta evaluated at x and a,b for x on a grid between 0 and 1 and various values of a,b
+# Run this code line by line if you have trouble reading it and figuring out what it does
+expand.grid(a = c(.5,1,2),b = c(.5,1,2)) %>%
+  pmap_dfr(~data_frame(x = seq(0.01,0.99,by=0.01),y = dbeta(x = x,shape1=.x,shape2=.y),a = .x,b = .y)) %>%
+  ggplot(aes(x = x,y = y)) +
+  theme_classic() +
+  facet_wrap(a~b) +
+  geom_line(colour = "purple") +
+  labs(title = "Beta Distribution, various a and b",
+       subtitle = "Top value is a, bottom is b",
+       x = "Datapoint x",
+       y = "Density f(x;a,b)") +
+  theme(text = element_text(size = 22))
+
+```
+
+The Beta distribution is very flexible; different values of a and b give very different shapes. If we thought extreme values (close to 0 or 1) of $\theta$ were likely, we could choose a prior with a and b both less than 1; if we think middle values are more likely, we can choose a and b to be greater than 1.
+
+For our example, we will choose a Beta(12,12) distribution, for reasons we will discuss below in the section labelled **conjugate priors**. This looks like this:
+```{r betaprior-vis2}
+data_frame(x = c(0.01,0.99)) %>%
+  ggplot(aes(x = x)) +
+  theme_classic() + 
+  stat_function(fun = dbeta,
+                args = list(shape1 = 12,shape2 = 12),
+                colour = "blue") +
+  labs(title = "Beta Prior for Theta",
+       subtitle = "Bayesian Coin Flipping Example",
+       x = "Theta",
+       y = "Prior Density, p(Theta)") +
+  scale_x_continuous(breaks = seq(0,1,by=0.1))
+```
+
+This prior puts strong weight on the coin being close to fair; values below $\theta = 0.3$ and $\theta = 0.7$ have very little prior probability. This can be verified exactly:
+```{r betaprior-prob1}
+# Prior probability of theta being between 0.3 and 0.7
+pbeta(0.7,shape1=12,shape2=12) - pbeta(0.3,shape1=12,shape2=12)
+```
+
+## The Posterior
+
+Our prior has density
+$$
+p(\theta;a,b) = \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)}\theta^{a-1}(1-\theta)^{b-1}
+$$
+Our likelihood remains the same as before:
+$$
+p(X|\theta) = \theta^{\sum_{i=1}^{n}x_{i}}(1-\theta)^{n - \sum_{i=1}^{n}x_{i}}
+$$
+Bayes' Rule is still used to compute the posterior from these quantities; however, it looks slightly different now:
+$$
+\begin{aligned}
+p(\theta|X) &= \frac{p(X|\theta)p(\theta)}{p(X)} \\
+&= \frac{p(X|\theta)p(\theta)}{\int_{0}^{1}p(X|\theta)p(\theta)d\theta}
+\end{aligned}
+$$
+
+Now, because $\theta$ is defined on a continuous interval, the marginal likelihood/model evidence/normalizing constant is computed via integrating the joint distributionn of $X$ and $\theta$ over the range of $\theta$.
+
+In this example, the marginal likelihood and the posterior can be computed explicitly as follows:
+$$
+\begin{aligned}
+p(X) &= \int_{0}^{1}p(X|\theta)p(\theta)d\theta \\
+&= \int_{0}^{1} \theta^{\sum_{i=1}^{n}x_{i}}(1-\theta)^{n - \sum_{i=1}^{n}x_{i}} \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)}\theta^{a-1}(1-\theta)^{b-1} d\theta \\
+&= \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)} \times \int_{0}^{1} \theta^{\sum_{i=1}^{n}x_{i} + a - 1}(1-\theta)^{n - \sum_{i=1}^{n}x_{i} + b - 1} d\theta \\
+&= \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)} \times \frac{\Gamma(\sum_{i=1}^{n}x_{i} + a)\Gamma(n - \sum_{i=1}^{n}x_{i} + b)}{\Gamma(n + a + b)}
+\end{aligned}
+$$
+
+How did we evaluate that integral and get to the last line? We recognized the integrand as being the $\theta$-dependent part of a $Beta(\sum_{i=1}^{n}x_{i} + a,n - \sum_{i=1}^{n}x_{i} + b)$ density; hence it integrates to the reciprocal of the appropriate normalizing constant. This trick is commonly used in examples illustrating Bayesian inference; it shouldn't be taken from this, though, that this integral is always easy to evaluate like this. It is almost never easy, or even possible, to evaluate this integral in anything beyond these simple examples- more on this later.
+
+With $p(X)$ available, we can explicitly compute the posterior:
+$$
+\begin{aligned}
+p(\theta|X) &= \frac{p(X|\theta)p(\theta)}{p(X)} \\
+&= \frac{\theta^{\sum_{i=1}^{n}x_{i}}(1-\theta)^{n - \sum_{i=1}^{n}x_{i}} \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)}\theta^{a-1}(1-\theta)^{b-1}}{\frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)} \times \frac{\Gamma(\sum_{i=1}^{n}x_{i} + a)\Gamma(n - \sum_{i=1}^{n}x_{i} + b)}{\Gamma(n + a + b)}} \\
+&= \frac{\Gamma(n + a + b)}{\Gamma(\sum_{i=1}^{n}x_{i} + a)\Gamma(n - \sum_{i=1}^{n}x_{i} + b)} \times \theta^{\sum_{i=1}^{n}x_{i} + a - 1}(1-\theta)^{n - \sum_{i=1}^{n}x_{i} + b - 1}
+\end{aligned}
+$$
+which we recognize as a $Beta(a + \sum_{i=1}^{n}x_{i},b + n - \sum_{i=1}^{n}x_{i})$ distribution. Priors where the posterior belongs to the same family of distributions as the prior are called **conjugate priors**, and while they represent the minority of practical applications, they are very useful for examples.
+
+In this scenario, we can interpret the likelihood as directly updating the prior parameters, from $(a,b)$ to $(a + \sum_{i=1}^{n}x_{i},b + n - \sum_{i=1}^{n}x_{i})$. Let's visualize this for a few different datasets and sample sizes, for our chosen prior:
+```{r betaprior-vis3}
+prior <- function(theta) dbeta(theta,shape1 = 12,shape2 = 12)
+posterior <- function(theta,sumx,n) dbeta(theta,shape1 = 12 + sumx,shape2 = 12 + n - sumx)
+
+data_frame(x = c(0.01,0.99)) %>%
+  ggplot(aes(x = x)) +
+  theme_classic() + 
+  stat_function(fun = prior,
+                colour = "blue") +
+  stat_function(fun = posterior,
+                args = list(sumx = 5,n = 10),
+                colour = "purple") +
+  stat_function(fun = posterior,
+                args = list(sumx = 0,n = 10),
+                colour = "red") +
+  stat_function(fun = posterior,
+                args = list(sumx = 10,n = 10),
+                colour = "orange") +
+  labs(title = "Beta Prior vs Posterior for Theta, 10 coin flips",
+       subtitle = "Blue: Prior. Purple: 5 heads. Red: 0 heads. Orange: 10 heads",
+       x = "Theta",
+       y = "Density") +
+  scale_x_continuous(breaks = seq(0,1,by=0.1))
+```
+
+Some interesting points can be seen from this plot:
+
+  - When the observed data "matches" the prior, in the sense that we observe a dataset for which the original frequentist estimate of $\theta$ is very probable under the prior, the posterior becomes more peaked around that value.
+  - When the observed data are extreme, as in the case of 0 or 10 heads in 10 flips, the frequestist inference would also be extreme. In these cases, we would have estimated $\hat{\theta}_{freq} = 0$ or $1$. Because our prior distribution is not extreme, though, the posterior is more moderate, and ends up being peaked at the low/high end of the range of values that were reasonable under the prior.
+  
+Check out [this]() shiny app to get a better feel for how the prior, observed data and sample size influence the location and shape of the posterior under this model.
+
+### Point and Interval Estimation in Bayesian Inference
+
+With the posterior in hand, what do we actually do? We're used to immediately having a point estimate from frequentist inference, and there we typically proceed to derive a confidence interval for the parameter using the sampling distribution of the estimator.
+
+The situation isn't so different here. The posterior is analagous to the sampling distribution in the frequentist case, although the interpretation is different. In frequentist inference, we make statements about probable values for estimates in repeated sampling at fixed parameter values, and use this to infer the value of the parameter under which our observed data was most likely. In Bayesian inference, the posterior distribution is intepreted literally as the conditional distribution of the parameter given the data. We can just directly say things like "there is a $95\%$ chance that $\theta$ is between $0.4$ and $0.5$".
+
+Specifically, to obtain **point estimates** of parameters, we may use either the *posterior mean*:
+$$
+\hat{\theta}_{post. mean} = E(\theta|X) = \int_{\theta}\theta p(\theta|X)d\theta
+$$
+interpreted as a weighted average of possible values of $\theta$, with weights corresponding to their probabilities (densities); or, we may use the *posterior mode*:
+$$
+\hat{\theta}_{post. mode} = \mbox{argmax}_{\theta} p(\theta|X)
+$$
+which is the most probable value of $\theta$, given the observed data. In simple examples the posterior may be symmetric or nearly symmetric, so the two are nearly the same; in more complicated applications, either one is directly preferred, or both are computed and compared.
+
+For interval estimation, the frequentist notion of a *confidence interval* is replaced by a **credible interval**: an interval which has a specified probability of containing the parameter, given the observed data. Contrast this interpretation to that of the frequentist confidence interval, which states that a certain proportion of the intervals computed in the same manner from repeatedly sampled datasets would contain the parameter. The Bayesian credible interval interpretation is closer to how many people would interpret such an interval intuitively.
+
+Computing such a credible interval is a matter of finding the corresponding quantiles of the posterior, which is either simple or complicated depending on what the posterior is. In our example the posterior is known completely, and we can get a %95\%$ credible interval using the `qbeta` function:
+```{r credint-1}
+# E.g. for n = 10 and sumx = 5
+c(qbeta(0.025,shape1=12 + 5,shape2 = 12 + 5),qbeta(0.975,shape1=12 + 5,shape2 = 12 + 5))
+```
+
+The point estimate based off the posterior mode is the same as the frequentist estimate for these data, $\hat{\theta}_{freq} = \hat{\theta}_{post. mode} = 0.5$, as can be seen from the plot above. The corresponding frequentist confidence interval is given by
+```{r credint-2}
+c(.5 - sqrt(.5*.5/10)*1.96,.5 + sqrt(.5*.5/10)*1.96)
+```
+
+which is much wider. The Bayesian approach gives a more accurate estimate here, because we assumed strong prior information that ended up agreeing with the data. If the data had been more extreme, say $X = 1$ heads in $n = 10$ flips, the frequentist point estimate is $\hat{\theta}_{freq} = 0.1$ with confidence interval
+```{r credint-3}
+c(.1 - sqrt(.1*.9/10)*1.96,.1 + sqrt(.1*.9/10)*1.96)
+```
+
+Observing a single head in $10$ tosses leads us to believe strongly that $\theta$ must be small, and the corresponding confidence interval actually goes beyond the parameter space. It is true that if the coin were fair ($\theta = 0.5$), the observed data had about a $1\%$ chance of occurring. However, if we had a prior belief that the coin had probability of heads anywhere between $0.3$ and $0.7$, as above, we can compute the point and interval estimates obtained in a Bayesian setting:
+```{r credint-4}
+# Point estimate- find the posterior mode, which is a critical point
+# Use R's built in optimization tools, function nlminb() performs constrained minimization
+# Pass it a function that returns minus the posterior; minimizing -f(x) is the same as maximizing f(x)
+minus_posterior <- function(theta,sumx,n) -1 * posterior(theta,sumx,n)
+opt <- nlminb(objective = minus_posterior,start = 0.3,sumx = 1,n = 10,lower = 0.01,upper = 0.99)
+opt$par # Return the value at which the maximum occurs, i.e. the posterior mode
+
+# Credible interval
+c(qbeta(0.025,shape1=12 + 1,shape2 = 12 + 9),qbeta(0.975,shape1=12 + 1,shape2 = 12 + 9))
+```
+
+This interval is much more reasonable, stays within the parameter space, and still even includes the possibility that the coin is fair. Had we increased the sample size and observed a similarly extreme result, the posterior would become more centered in that region of the parameter space- that is, observing an equally extreme result with more data would diminish the effect of the prior on the resulting inferences.
+
+You can play around in the [above mentioned shiny app]() to get a feel for the comparison between frequentist confidence intervals and bayesian credible intervals works in this example.
+
+## Conjugate Priors
+
+### Moment-Matching
+
+### Empirical Bayes
+
+### Heirarchical Bayes
+
+## Non-conjugate Priors & Posterior Sampling
+
+
+
+# Predictive Modelling
+
+## Predictive Distributions
+
+## Bayesian Linear Regression
