@@ -493,7 +493,72 @@ flips %>%
        y = "Number of Times")
 ```
 
-## So-called "Non-informative" Priors
+We now use a $Beta(a,b)$ distribution as our prior, with $a$ and $b$ computed as above as $a = `r round(opt$par[1],2)`$ and $b = `r round(opt$par[2],2)`$. This gives a prior with mean
+$$
+E(\theta) = \frac{a}{a+b} = `r round(opt$par[1] / sum(opt$par),2)`
+$$
+and standard deviation
+$$
+SD(\theta) = \sqrt{\frac{ab}{(a+b)^{2}(a+b+1)}} = `r round( sqrt(prod(opt$par)/ (sum(opt$par)^2 * (sum(opt$par + 1)))),2)`
+$$
+Recalling that the value of $\theta$ used to generate the observed data was $0.40$, the prior is sharply peaked at the "true" value. 
+
+We can compare the resulting posterior to that which we would obtain by using a *moment-matching* prior having our previously chosen standard deviation. As an exercise, verify that the posterior distribution is a $Beta(c,d)$ distribution with
+$$
+\begin{aligned}
+c &= a + \sum_{i=1}^{N}\sum_{j=1}^{n}x_{ij} \\
+d &= b + Nn - \sum_{i=1}^{N}\sum_{j=1}^{n}x_{ij} \\
+\end{aligned}
+$$
+where $x_{ij}$ is the $j^{th}$ flip in the $i^{th}$ experiment, so $\sum_{i=1}^{N}\sum_{j=1}^{n}x_{ij}$ is the total number of heads across all experiments.
+```{r empbayes-4}
+# Moment-matching parameters: E(theta) = 0.4, SD(theta) = 0.1
+a_momatch <- 0.4 * (0.4*0.6 / 0.1^2 - 1)
+b_momatch <- 0.6 * (0.4*0.6 / 0.1^2 - 1)
+c(a_momatch,b_momatch)
+
+plt1 <- data_frame(x = c(0,1)) %>%
+  ggplot(aes(x = x)) +
+  theme_classic() +
+  stat_function(fun = dbeta,
+                args = list(shape1 = a_momatch,shape2 = b_momatch),
+                colour = "purple") +
+  stat_function(fun = dbeta,
+                args = list(shape1 = opt$par[1],shape2 = opt$par[2]),
+                colour = "blue") +
+  labs(title = "Comparison of Prior Distributions",
+       subtitle = "Blue: Empirical Bayes. Purple: Moment-Matching",
+       x = "Theta",
+       y = "Prior Density"
+  ) +
+  scale_x_continuous(breaks = seq(0,1,0.1))
+
+plt2 <- data_frame(x = c(0,1)) %>%
+  ggplot(aes(x = x)) +
+  theme_classic() +
+  stat_function(fun = dbeta,
+                args = list(shape1 = a_momatch + n * sum(flips$x),shape2 = b_momatch + N*n - n*sum(flips$x)),
+                colour = "purple") +
+  stat_function(fun = dbeta,
+                args = list(shape1 = opt$par[1] + n * sum(flips$x),shape2 = opt$par[2] + N*n - n*sum(flips$x)),
+                colour = "blue") +
+  labs(title = "Comparison of Posterior Distributions",
+       subtitle = "Blue: Empirical Bayes. Purple: Moment-Matching",
+       x = "Theta",
+       y = "Posterior Density"
+  ) +
+  scale_x_continuous(breaks = seq(0,1,0.1))
+
+cowplot::plot_grid(plt1,plt2,nrow=1)
+
+  
+```
+
+Using the data twice results in a much narrower distribution around the true value of the parameter. We *could* have chosen a prior by moment-matching that was this narrow, but we probably wouldn't have. So is Empirical Bayes always better? 
+
+We had a lot of data, and a very simple model. As the volume of data greatly outpaces the model complexity, it becomes less and less likely to see individual datasets that are improbable under the model. It is reasonable in this case for the inference procedure to rely more strongly on the observed data. If, however, we had a small dataset or a very complex model, it would be more likely that our observed data lies farther from the truth. We would then want to use an inference procedure that more strongly relied on our beliefs about what values of the parameters are likely.
+
+Try the above experiment, but decrease the values of $n$ and $N$. If the original dataset just happens to be centered around some value of $\theta$ other than the true value, the Empirical Bayes prior will be peaked around the wrong point, and it will be very difficult for the data to bring it back, since the data is also centred at the wrong point.
 
 
 # Full Example: 
