@@ -561,6 +561,21 @@ We had a lot of data, and a very simple model. As the volume of data greatly out
 Try the above experiment, but decrease the values of $n$ and $N$. If the original dataset just happens to be centered around some value of $\theta$ other than the true value, the Empirical Bayes prior will be peaked around the wrong point, and it will be very difficult for the data to bring it back, since the data is also centred at the wrong point.
 
 
-# Full Example: 
+# Full Example: Snow Gauge Calibration
 
+This example is taken from chapter 8 of Stat Labs by Nolan and Speed. The data can be downloaded [here](https://www.stat.berkeley.edu/~statlabs/labs.html#gauge).
 
+```{r snow-1}
+# Read data
+snowdat <- readr::read_table("https://www.stat.berkeley.edu/~statlabs/data/gauge.data",col_types = "dd")
+
+snowdat %>%
+  ggplot(aes(x = density,y = log10(gain))) +
+  theme_classic() +
+  geom_point(pch = 21,colour = "black",fill = "orange") +
+  labs(title = "log(Gain) vs Density, Snow Gauge Readings",
+       x = "Density",
+       y = "log(Gain)") +
+  geom_smooth(method = "lm",colour = "purple",se = TRUE,linetype = "dashed")
+
+```
