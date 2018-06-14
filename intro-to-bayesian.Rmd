@@ -561,21 +561,89 @@ We had a lot of data, and a very simple model. As the volume of data greatly out
 Try the above experiment, but decrease the values of $n$ and $N$. If the original dataset just happens to be centered around some value of $\theta$ other than the true value, the Empirical Bayes prior will be peaked around the wrong point, and it will be very difficult for the data to bring it back, since the data is also centred at the wrong point.
 
 
-# Full Example: Snow Gauge Calibration
+# Full Example: Bayesian Regression
 
-This example is taken from chapter 8 of Stat Labs by Nolan and Speed. The data can be downloaded [here](https://www.stat.berkeley.edu/~statlabs/labs.html#gauge).
+For an example, we'll fit a curve to Toronto 311 contact centre wait times. 311 is a [service](https://www.toronto.ca/home/311-toronto-at-your-service/) operated by the City of Toronto in which residents can call (dial *311) and submit service requests for things like potholes, excess garbage pickup, downed trees, and so on. People call in to the service and speak to an actual human being in a contact centre. Data on the daily average wait time for such calls for the period from December 29th, 2009 to January 2nd, 2011 is available from Open Data Toronto [here](https://www.toronto.ca/city-government/data-research-maps/open-data/open-data-catalogue/#9d74296c-05f1-13b0-8129-efaffd623963), and stored on [github](https://media.githubusercontent.com/media/awstringer1/leaf2018/gh-pages/datasets/contact-centre.csv) for your use.
 
-```{r snow-1}
+It might be of interest to the call centre operations teams to estimate average wait time on a given day of the year; such estimates could be used for planning purposes. Can we do it, and how? Let's take a look at the data:
+```{r contact-1}
 # Read data
-snowdat <- readr::read_table("https://www.stat.berkeley.edu/~statlabs/data/gauge.data",col_types = "dd")
+contactdat <- readr::read_csv("https://media.githubusercontent.com/media/awstringer1/leaf2018/gh-pages/datasets/contact-centre.csv",col_types = "cd") %>%
+  mutate_at("date",lubridate::mdy)
 
-snowdat %>%
-  ggplot(aes(x = density,y = log10(gain))) +
+contactdat %>%
+  ggplot(aes(x = date,y = answer_speed)) +
   theme_classic() +
   geom_point(pch = 21,colour = "black",fill = "orange") +
-  labs(title = "log(Gain) vs Density, Snow Gauge Readings",
-       x = "Density",
-       y = "log(Gain)") +
-  geom_smooth(method = "lm",colour = "purple",se = TRUE,linetype = "dashed")
+  labs(title = "Average Wait Time by Day, Toronto 311 Contact Centre",
+       x = "Date",
+       y = "Wait Time")
 
+```
+The extreme wait times in the summer of 2010 might be explainable if we went back and read the news to figure out what was happening then. We can make them not so drastic by instead modelling the log of wait time:
+```{r contact-2}
+contactdat %>%
+  ggplot(aes(x = date,y = log(answer_speed))) +
+  theme_classic() +
+  geom_point(pch = 21,colour = "black",fill = "orange") +
+  labs(title = "Average Wait Time by Day, Toronto 311 Contact Centre",
+       x = "Date",
+       y = "log(Wait Time)")
+
+```
+While the variance in `log(answer_speed)` is large, it does look like there is some kind of trend. 
+
+
+$$
+y_{i} = \beta_{0} + \beta_{1}x_{i} + \epsilon_{i}
+$$
+
+Since the apparent relationship between these quantities is not linear, a natural thing to do is to fit a polynomial model, of the form
+$$
+y_{i} = x_{i}^{\prime}\beta + \epsilon_{i}
+$$
+where now $\beta = (\beta_{0},\beta_{1},\ldots,\beta_{p})$ and $x_{i} = (1,x_{i},x_{i}^{2},\ldots,x_{i}^{p})$. This allows us to fit, for different $p$, curves of any shape, using the normal linear model theory.
+
+Okay, how to choose $p$ though? Is a quadratic model okay, or do we need a cubic or quartic or higher? Let's look at thre residual sum of squared errors and the graphical displays of these fits for various values of $p$:
+```{r poly-1,cache=TRUE,fig.height=20}
+# Maximum degree to try
+p <- 200
+# Standardize both variables to have mean 0 and variance 1, so they are interpreted on the same scale
+contact_std <- contactdat %>%
+  mutate_at("date",as.numeric) %>%
+  mutate_at("answer_speed",log) %>%
+  mutate_all(funs( (. - mean(.)) / sd(.)))
+
+# Fit for different values of p
+model_list <- 1:p %>%
+  map(~lm(answer_speed ~ poly(date,degree = .,raw = TRUE),data = contact_std)) 
+
+# Plot
+plot_poly <- function(p) {
+  plt <- data_frame(x = seq(-2,2,by = 0.1),
+             y = predict(model_list[[p]],newdata = data_frame(date = x))) %>%
+    ggplot(aes(x = x,y = y,group = 1)) +
+    theme_classic() +
+    geom_point(data = contact_std,
+               mapping = aes(x = date,y = answer_speed),
+               colour = "black",
+               fill = "lightblue",
+               pch = 21) +
+    geom_line(colour = "purple") +
+    labs(title = "Polynomial fit to contact time data",
+         subtitle = str_c("Degree = ",p),
+         x = "Concentration",
+         y = "Time") +
+    ylim(-3,3)
+  
+  return(plt)
+}
+
+# Plot them all!
+1:10 %>%
+  map(plot_poly) %>%
+  cowplot::plot_grid(plotlist = .,ncol = 2)
+```
+```{r poly-2}
+plot_poly(200)
 ```
