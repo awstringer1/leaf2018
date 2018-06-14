@@ -565,11 +565,15 @@ Try the above experiment, but decrease the values of $n$ and $N$. If the origina
 
 For an example, we'll fit a curve to Toronto 311 contact centre wait times. 311 is a [service](https://www.toronto.ca/home/311-toronto-at-your-service/) operated by the City of Toronto in which residents can call (dial *311) and submit service requests for things like potholes, excess garbage pickup, downed trees, and so on. People call in to the service and speak to an actual human being in a contact centre. Data on the daily average wait time for such calls for the period from December 29th, 2009 to January 2nd, 2011 is available from Open Data Toronto [here](https://www.toronto.ca/city-government/data-research-maps/open-data/open-data-catalogue/#9d74296c-05f1-13b0-8129-efaffd623963), and stored on [github](https://media.githubusercontent.com/media/awstringer1/leaf2018/gh-pages/datasets/contact-centre.csv) for your use.
 
-It might be of interest to the call centre operations teams to estimate average wait time on a given day of the year; such estimates could be used for planning purposes. Can we do it, and how? Let's take a look at the data:
+It might be of interest to the call centre operations teams to estimate average wait time on a given day of the year; such estimates could be used for planning purposes. Realistically, modelling just the trend as a function of date probably isn't useful from an operations standpoint, but such an exercise is often required as a proof-of-concept, in order to justify spending effort on a more complicated analysis.
+
+Can we do it, and how? Let's take a look at the data:
 ```{r contact-1}
 # Read data
 contactdat <- readr::read_csv("https://media.githubusercontent.com/media/awstringer1/leaf2018/gh-pages/datasets/contact-centre.csv",col_types = "cd") %>%
   mutate_at("date",lubridate::mdy)
+
+glimpse(contactdat)
 
 contactdat %>%
   ggplot(aes(x = date,y = answer_speed)) +
@@ -593,10 +597,11 @@ contactdat %>%
 ```
 While the variance in `log(answer_speed)` is large, it does look like there is some kind of trend. 
 
-
+The simplest thing we can thing to do is fit a normal linear model:
 $$
 y_{i} = \beta_{0} + \beta_{1}x_{i} + \epsilon_{i}
 $$
+where $y_{i}$ is the average wait time on the $i^{th}$ date, $x_{i}$ is a suitable numerical value for the $i^{th}$ date (e.g. number of days since some reference point), and $\epsilon_{i} \sim N(0,\sigma^{2})$ is the error of the $i^{th}$ observation about its mean.
 
 Since the apparent relationship between these quantities is not linear, a natural thing to do is to fit a polynomial model, of the form
 $$
@@ -604,10 +609,10 @@ y_{i} = x_{i}^{\prime}\beta + \epsilon_{i}
 $$
 where now $\beta = (\beta_{0},\beta_{1},\ldots,\beta_{p})$ and $x_{i} = (1,x_{i},x_{i}^{2},\ldots,x_{i}^{p})$. This allows us to fit, for different $p$, curves of any shape, using the normal linear model theory.
 
-Okay, how to choose $p$ though? Is a quadratic model okay, or do we need a cubic or quartic or higher? Let's look at thre residual sum of squared errors and the graphical displays of these fits for various values of $p$:
+How to choose $p$ though? Is a quadratic model okay, or do we need a cubic or quartic or higher? Let's look at the residual sum of squared errors and the graphical displays of these fits for various values of $p$:
 ```{r poly-1,cache=TRUE,fig.height=20}
-# Maximum degree to try
-p <- 200
+# Degrees to try
+ptotry <- c(1:10,100,371)
 # Standardize both variables to have mean 0 and variance 1, so they are interpreted on the same scale
 contact_std <- contactdat %>%
   mutate_at("date",as.numeric) %>%
@@ -615,13 +620,14 @@ contact_std <- contactdat %>%
   mutate_all(funs( (. - mean(.)) / sd(.)))
 
 # Fit for different values of p
-model_list <- 1:p %>%
+model_list <- ptotry %>%
   map(~lm(answer_speed ~ poly(date,degree = .,raw = TRUE),data = contact_std)) 
 
+names(model_list) <- ptotry
 # Plot
 plot_poly <- function(p) {
   plt <- data_frame(x = seq(-2,2,by = 0.1),
-             y = predict(model_list[[p]],newdata = data_frame(date = x))) %>%
+             y = predict(model_list[[as.character(p)]],newdata = data_frame(date = x))) %>%
     ggplot(aes(x = x,y = y,group = 1)) +
     theme_classic() +
     geom_point(data = contact_std,
@@ -640,10 +646,113 @@ plot_poly <- function(p) {
 }
 
 # Plot them all!
-1:10 %>%
+ptotry %>%
   map(plot_poly) %>%
   cowplot::plot_grid(plotlist = .,ncol = 2)
 ```
+
+There is a lot of variance in the data. As the degree of the polynomial becomes higher, the curve fits closer and closer to the observed data. How close is close enough? At what point do we start fitting to noise?
+
+Let's look at the sum of squared errors, and the corresponding estimated residual standard deviation, for each model:
 ```{r poly-2}
-plot_poly(200)
+model_list %>%
+  map(~c(ssr = sum(residuals(.)^2),sigma = summary(.)$sigma)) %>%
+  reduce(bind_rows) %>%
+  bind_cols(data_frame(degree = ptotry))
+
+
+```
+As degree goes up, the sum of squared residuals goes down, indicating the curve fits closer to the observed data. It seems like fitting more complicated curves is always better.
+
+Looking closer at the models, though, we see something alarming. Let's look at the actual coefficients for the first 10 models:
+```{r poly-3}
+# Get the first d slope coefficients from a model and return them in a named vector
+get_d_coef <- function(d,mod) {
+  
+  coef_vec <- coef(mod)
+  out <- numeric(d+2)
+  out[1:length(coef_vec)] <- coef_vec
+  out[d+2] <- length(coef_vec) - 1
+  names(out) <- c("Intercept",str_c("beta_",1:d),"degree")
+  round(out,4)
+}
+
+# Get the coefficients for each model
+all_model_coefs <- model_list[1:10] %>%
+  map(~get_d_coef(10,.)) %>%
+  reduce(bind_rows)
+
+all_model_coefs[ ,1:6]
+all_model_coefs[ ,7:12]
+
+```
+As the degree of the polynomial gets bigger, so do the absolute values of the point estimates of the regression coefficients, and they start pointing in different directions, in an attempt to cancel each other out. The values don't look large, but remember since we standardized the covariate and response, these are interpreted as standard deviations from the mean.
+
+The coefficients of larger models get even crazier:
+```{r poly-4}
+data_frame(beta = c("Intercept",str_c(1:20)),
+           value = coef(lm(answer_speed ~ poly(date,degree = 20,raw = TRUE),data = contact_std)) %>% round(4)
+) %>%
+  print(n = Inf)
+
+```
+While the higher degree polynomials may "fit the data better", the underlying models are based on wildly variable (and probably inaccurate) coefficient estimates, and this is not desirable for a variety of reasons.
+
+## A Bayesian Formulation
+
+There are a number of ways, many of them equivalent to each other, to address this. Following the theme of this lab, we'll do it in a Bayesian framework: put a prior on $\beta$, make it so that prior says that large values of the coefficients are extremely unlikely, and then compute and analyze the posterior for $\beta$ given the prior and the data. 
+
+The likelihood for the data $y$ in this problem is
+$$
+y_{i}|\beta \sim N(x_{i}^{\prime}\beta,\sigma^{2})
+$$
+From the discussion of conjugate priors above, and from your own completion of the associated exercise, we know that the conjugate prior for this distribution is also normal:
+$$
+\beta \sim N(m,\Sigma)
+$$
+with $m = (m_{0},m_{1},\ldots,m_{p})$ representing the prior mean and $\Sigma$ representing the prior covariance matrix. Moment-matching is easy here, because the prior hyperparameters correspond directly to the first two moments of the prior distribution, so we don't have to solve any equations like for the Beta example. We can figure this out as follows:
+
+  - We'll take $m = 0$, because we simply don't have any reason to believe that the curve we're fitting takes any particular shape, prior to looking at the dataset
+  - We'll take the prior covariance matrix to be diagonal, $\Sigma = s^{2} \times I$ partly because multivariate stats is not a prerequisite for this lab; also partly because this is reasonable. Inducing prior covariance is sometimes a great idea, but it's too complicated a discussion for this example.
+  - We'll choose the prior variance, $s^{2}$, to enforce our belief that the values of the coefficients in the model that generated the data are actually small. What does "small" mean? This is highly subjective; interpreting these regression coefficients as being "standard deviations away from the predicted mean response due to a unit standard deviation change in the covariates", which is a mouthful, leads to the notion that a $\beta_{j}$ of 1 is probably getting pretty big. Hence we will choose $s^{2} = 0.5^{2}$, which gives a prior standard deviation of $0.5$, and hence any value more than 2 standard deviations away from the prior mean is unlikely under the prior- i.e. any value greater than 1.
+  
+For simplicity, we will take the data variance $\sigma^{2}$ to be fixed at its sample value, $\hat{\sigma}^{2} = 1$. It equals 1 precisely because we divided the data by the sample variance, when we standardized. A fully Bayesian treatment would put a prior on this as well.
+  
+Using standard results about joint and conditional normal random variables leads us to the posterior distribution:
+$$
+\begin{aligned}
+\beta | y &\sim N(m_{post},\Sigma_{post}) \\
+m_{post} &= \Sigma_{post}\left( \frac{1}{s^{2}}m + \frac{1}{\sigma^{2}}X^{\prime}y\right) \\
+\Sigma_{post} &= \left( \frac{1}{s^{2}} + \frac{1}{\sigma^{2}}X^{\prime}X\right)^{-1}
+\end{aligned}
+$$
+Here $X$ is the design matrix, with rows consisting of the individual $x_{i}$. Because the posterior is normal, both the mean and mode are equal to $m_{post}$- our Bayesian point estimate of $\beta$.
+
+Let's compare this point estimate, and the curves that fit into the associated $95\%$ credible interval (really a credible *region*), with the curve estimated using regular least squares/maximum likelihood from before:
+
+```{r poly-5}
+# Function to fit the Bayesian linear regression described above
+# Returns the posterior mean and variance of beta
+fit_bayesian_lm <- function(p,m=rep(0,p+1),s=0.5) {
+  # p is the degree of polynomial to fit
+  # m is the prior mean, and s the prior standard deviation
+  
+  m <- cbind(m)
+  
+  X <- model.matrix(answer_speed ~ poly(date,degree = p,raw = TRUE),data = contact_std)
+  
+  y <- cbind(contact_std$answer_speed)
+  
+  # Posterior mean and variance
+  varpost <- solve((1/s^2) + t(X) %*% X)
+  meanpost <- varpost %*% ((1/s^2)*m + t(X) %*% y)
+  
+  
+}
+
+# Function to predict new y at given x
+# For given x, returns predicted y and lower/upper bounds of a 2-sd interval
+
+fit_bayesian_lm(3)
+
 ```
