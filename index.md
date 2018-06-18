@@ -18,6 +18,8 @@ Worked example from Horton (2013): probability problem with empirical and analyt
   - [Recommendations on implementing similar examples in statistics courses](http://awstringer1.github.io/leaf2018/horton2013-implementation.html)
   - [Example assessments](http://awstringer1.github.io/leaf2018/horton2013-.html)
 
+Worked example from Horton (2013): introduction to Bayesian statistics and sampling from a posterior distribution using MCMC
+
 ## Examples of Student-Facing Materials
 Examples of materials that can be worked on with students as part of a course. Each item has an example of a course in which it could be used, with **bold** indicating a course in which it *has* been used. Also included are example Intended Learning Outcomes that the material might relate to. These are aligned with the Statistics Undergraduate Program Learning Outcomes.
 
@@ -46,6 +48,17 @@ Materials that are designed to walk students through a statistical concept and t
     - Programatically make graphs of many variables efficiently with `ggplot` and `purrr::map` (**Methods**)
     - Manipulate data of moderate size (> 1M rows) and complexity (**Computational Thinking**)
 
+[Introduction to Bayesian Statistics](http://awstringer1.github.io/leaf2018/intro-to-bayesian.html)
+
+  - `R` concepts covered: matrix algebra, working with list-comprehension (in place of loops), plotting with `ggplot`, reading in simple real-world data from flat files
+  - Statistical concepts covered: Bayesian statistics; priors, likelihoods and posteriors; point and interval estimation, with comparsion to frequentist; choosing a prior in applied problems; fully worked example of Bayesian polynomial regression applied to Toronto 311 contact centre wait time data
+  - Necessary background: basic `R` programming; 2nd year-level calculus, probability and matrix algebra
+  - Description: introduction to Bayesian statistics for students with a course in probability, and perhaps a course covering frequentist estimation (e.g. STA261 or STA255). The ideas of prior, likelihood, and posterior; probability directly measuring uncertainty. An extended example of coin-flipping, with a detailed investigation of the effect of the prior and data (and an accompanying [shiny app](http://underdog.utstat.toronto.edu:3838/stringer/bayesian-tutorial/)). Practical discussion on choosing a prior, and setting hyperparameters by moment-matching and empirical Bayes. An extended example of Bayesian polynomial regression, using real data from Open Data Toronto, to fit a curve to 311 contact centre wait times.
+  - Intended Learning Outcomes:
+      - Using probability to directly quantify uncertainty; Statistical inference paradigms; Rationale of statistical methods based on theory (**Theory**)
+      - Compare and contrast different paradigms on a given problem; use data visualization both to understand data and to understand impact of methods (**Methods**)
+      - Work with advanced list-comprehension in `R` to efficiently perform tedious tasks, like fitting many models or making many plots, using code that is cleaner and faster than native `R` loops; data reading and manipulation (**Computational Thinking**)
+      - Source a real dataset from Open Data Toronto, pose a basic question, and apply statistical methodology to the available data to attempt to address that question (**Real-World Problems**)
 
 ### Lecture Supplements
 Materials that can be used during lecture as a supplement to traditional slides and blackboard writing.

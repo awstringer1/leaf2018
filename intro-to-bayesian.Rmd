@@ -696,7 +696,7 @@ data_frame(beta = c("Intercept",str_c(1:20)),
   print(n = Inf)
 
 ```
-While the higher degree polynomials may "fit the data better", the underlying models are based on wildly variable (and probably inaccurate) coefficient estimates, and this is not desirable for a variety of reasons.
+While the higher degree polynomials may "fit the data better", the underlying models are based on wildly variable (and probably inaccurate) coefficient estimates, and this is not desirable.
 
 ## A Bayesian Formulation
 
@@ -712,9 +712,9 @@ $$
 $$
 with $m = (m_{0},m_{1},\ldots,m_{p})$ representing the prior mean and $\Sigma$ representing the prior covariance matrix. Moment-matching is easy here, because the prior hyperparameters correspond directly to the first two moments of the prior distribution, so we don't have to solve any equations like for the Beta example. We can figure this out as follows:
 
-  - We'll take $m = 0$, because we simply don't have any reason to believe that the curve we're fitting takes any particular shape, prior to looking at the dataset
+  - We'll take $m = 0$, because we simply don't have any reason to believe that the curve we're fitting takes any particular shape, prior to looking at the dataset.
   - We'll take the prior covariance matrix to be diagonal, $\Sigma = s^{2} \times I$ partly because multivariate stats is not a prerequisite for this lab; also partly because this is reasonable. Inducing prior covariance is sometimes a great idea, but it's too complicated a discussion for this example.
-  - We'll choose the prior variance, $s^{2}$, to enforce our belief that the values of the coefficients in the model that generated the data are actually small. What does "small" mean? This is highly subjective; interpreting these regression coefficients as being "standard deviations away from the predicted mean response due to a unit standard deviation change in the covariates", which is a mouthful, leads to the notion that a $\beta_{j}$ of 1 is probably getting pretty big. Hence we will choose $s^{2} = 0.5^{2}$, which gives a prior standard deviation of $0.5$, and hence any value more than 2 standard deviations away from the prior mean is unlikely under the prior- i.e. any value greater than 1.
+  - We'll choose the prior variance, $s^{2}$, to enforce our belief that the values of the coefficients in the model that generated the data are actually small. What does "small" mean? This is highly subjective; interpreting these regression coefficients as being "standard deviations away from the predicted mean response due to a unit standard deviation change in the covariates", which is a mouthful, leads to the notion that a $\beta_{j}$ of 1 is probably getting pretty big. Hence we will choose $s^{2} = 0.5^{2}$, which gives a prior standard deviation of $0.5$, and hence any value more than 2 standard deviations away from the prior mean is unlikely under the prior- i.e. any value greater than 1. When running the code here, though, you should definitely change this and note the effect that this has on the resulting curve, because this is super important.
   
 For simplicity, we will take the data variance $\sigma^{2}$ to be fixed at its sample value, $\hat{\sigma}^{2} = 1$. It equals 1 precisely because we divided the data by the sample variance, when we standardized. A fully Bayesian treatment would put a prior on this as well.
   
@@ -722,37 +722,177 @@ Using standard results about joint and conditional normal random variables leads
 $$
 \begin{aligned}
 \beta | y &\sim N(m_{post},\Sigma_{post}) \\
-m_{post} &= \Sigma_{post}\left( \frac{1}{s^{2}}m + \frac{1}{\sigma^{2}}X^{\prime}y\right) \\
-\Sigma_{post} &= \left( \frac{1}{s^{2}} + \frac{1}{\sigma^{2}}X^{\prime}X\right)^{-1}
+m_{post} &= \left( \frac{1}{s^{2}}I + \frac{1}{\sigma^{2}}X^{\prime}X\right)^{-1}\left( \frac{1}{s^{2}}m + \frac{1}{\sigma^{2}}X^{\prime}y\right) \\
+\Sigma_{post} &= \left( \frac{1}{s^{2}}I + \frac{1}{\sigma^{2}}X^{\prime}X\right)^{-1}
 \end{aligned}
 $$
 Here $X$ is the design matrix, with rows consisting of the individual $x_{i}$. Because the posterior is normal, both the mean and mode are equal to $m_{post}$- our Bayesian point estimate of $\beta$.
 
-Let's compare this point estimate, and the curves that fit into the associated $95\%$ credible interval (really a credible *region*), with the curve estimated using regular least squares/maximum likelihood from before:
+From normal regression theory, if we fit a standard (non-Bayesian) linear regression, the resulting point estimate of $\beta$ would be
+$$
+\hat{\beta}_{normal} = \left( X^{\prime}X \right)^{-1}X^{\prime}y
+$$
+with a Gaussian sampling distribution, and variance
+$$
+Var\left( \hat{\beta}_{normal} \right) = \sigma^{2}\left( X^{\prime}X \right)^{-1}
+$$
+We can interpret the effects of the prior distribution intuitively as shrinking the frequentist point estimate towards the prior mean, by an amount depending on the data variance and the prior variance.
 
-```{r poly-5}
+Let's compare the Bayesian regression to the normal-theory frequentist regression. For different values of $p$, we'll plot the curves corresponding to the Bayesian posterior mean and the frequentist point estimate, and pointwise credible (Bayesian) and confidence (frequentist) intervals. A pointwise interval for $\beta$ at a given $x$ is calculated as
+$$
+\hat{\beta} \pm 2\times x^{\prime}Var(\hat{\beta})x
+$$
+These are meant to give a rough idea of the range of plausible curves at each given $x$; they are misleading in that when calculated this way they don't actually give a measure of the variability associated with the entire curve. Nonetheless they are useful for comparing estimated curves. Along with the plots, we'll compute the actual model coefficients, and the residual sum of squares associated with the fit for that value of $p$. We can then compare the two approaches as $p$ gets high, and make a subjective choice as to the value of $p$ that we prefer.
+
+All of this takes some work to code up, so here we go! We're going to need
+
+  - A function to estimate the Bayesian linear regression for a given p, returning the posterior mean and variance
+  - A function to estimate the frequentist linear regression for a given p, returning the point estimate and variance
+  - A function to take a value of p, fit the above two models, and return a dataframe consisting of the observed responses, their predictions under the model (the value of the curve at that x point), and the lower and upper points of the associated interval, for each model
+  - A function to plot the above data, and
+  - A script that fits the models for various values of $p$, returning a dataframe with the residual sum of squares for the model
+```{r poly-5,cache = TRUE,fig.height=50}
 # Function to fit the Bayesian linear regression described above
-# Returns the posterior mean and variance of beta
+# Returns the posterior mean and variance
 fit_bayesian_lm <- function(p,m=rep(0,p+1),s=0.5) {
   # p is the degree of polynomial to fit
   # m is the prior mean, and s the prior standard deviation
   
   m <- cbind(m)
-  
   X <- model.matrix(answer_speed ~ poly(date,degree = p,raw = TRUE),data = contact_std)
-  
   y <- cbind(contact_std$answer_speed)
   
   # Posterior mean and variance
-  varpost <- solve((1/s^2) + t(X) %*% X)
+  varpost <- solve((1/s^2)*diag(dim(X)[2]) + t(X) %*% X)
   meanpost <- varpost %*% ((1/s^2)*m + t(X) %*% y)
   
-  
+  list(
+    estimate = meanpost,
+    var = varpost
+  )
+}
+
+# Function to fit the frequentist linear model
+# Returns the point estimate and variance
+fit_frequentist_lm <- function(p) {
+  mod <- lm(answer_speed ~ poly(date,degree = p,raw = TRUE),data = contact_std)
+  list(
+    estimate = cbind(coef(mod)),
+    var = vcov(mod)
+  )
 }
 
 # Function to predict new y at given x
 # For given x, returns predicted y and lower/upper bounds of a 2-sd interval
+predict_with_interval <- function(model_data,x,p) {
+  # model_data is the output of one of the above functions
+  # x here is a scalar
+  # Create a vector of length p+1 containing 1, x, x^2, ... , x^p
+  xvec <- c(1)
+  for (i in 1:p) {
+    xvec <- c(xvec,x^i)
+  }
+  xvec <- cbind(xvec)
+  
+  vn <- t(xvec) %*% model_data$var %*% xvec
+  mn <- t(xvec) %*% model_data$estimate
+  
+  c(
+    x = x,
+    predicted = mn,
+    lower = mn - 2*vn,
+    upper = mn + 2*vn
+  )
+}
 
-fit_bayesian_lm(3)
+# Now, a function that will take a value of p, and fit the above two models, 
+# returning predictions and pointwise interval bounds for each training
+# set point
+fit_both_models <- function(p,...) {
+  # The ... can be used to pass additional arguments to the fit_bayesian_lm function,
+  # like a different prior mean and variance
+  bayesian_lm <- fit_bayesian_lm(p,...)
+  frequentist_lm <- fit_frequentist_lm(p)
+  
+  # Get all unique training set points, and map the predict_with_interval function
+  # over them, reducing the results into a data_frame. Do for each of frequentist and bayesian.
+  # Also, manually add back on the observed values of y
+  bayes_predictions <- contact_std %>%
+    pull(date) %>%
+    map(~predict_with_interval(bayesian_lm,.x,p)) %>%
+    reduce(bind_rows) %>%
+    bind_cols(dplyr::select(contact_std,observed = answer_speed))
+  freq_predictions <- contact_std %>%
+    pull(date) %>%
+    map(~predict_with_interval(frequentist_lm,.x,p)) %>%
+    reduce(bind_rows) %>%
+    bind_cols(dplyr::select(contact_std,observed = answer_speed))
+  
+  # Return a list containing the model parameters and predictions
+  list(
+    bayesian = list(
+      predictions = bayes_predictions,
+      model = bayesian_lm
+    ),
+    frequentist = list(
+      predictions = freq_predictions,
+      model = frequentist_lm
+    )
+  )
+}
+
+# Fit the models for several values of p
+ptotry <- c(1:10)
+model_fits <- ptotry %>%
+  map(~list(
+            p = .x,
+            data = fit_both_models(p = .x))
+  )
+
+# Plot them
+plot_one_p <- function(model) {
+  # Stack the data for the frequentist and bayesian together, create a new variable
+  # indicating frequentist/bayesian. This allows us to make a single ggplot with
+  # two frames, one for each curve
+  plt <- model$data$bayesian$predictions %>%
+    mutate(type = "Bayesian") %>%
+    bind_rows(model$data$frequentist$predictions %>% mutate(type = "Frequentist")) %>%
+    ggplot(aes(x = x,colour = type,fill = type)) +
+    theme_classic() + 
+    facet_grid(~type) +
+    geom_ribbon(aes(ymin = lower,ymax = upper),alpha = 0.3) +
+    geom_point(aes(y = observed),colour = "black",fill = "grey",pch = 21) +
+    geom_line(aes(y = predicted)) + 
+    labs(title = "Contact Time Model",
+         subtitle = str_c("p = ",model$p),
+         x = "Date (Standardized)",
+         y = "Contact Time (Standardized)",
+         fill = "Type") +
+    scale_fill_brewer(palette = "Set1") +
+    scale_colour_brewer(palette = "Set1") +
+    guides(colour = FALSE) +
+    ylim(c(-2.5,2.5))
+  
+  return(plt)
+}
+
+# Plot them all
+model_fits %>%
+  map(plot_one_p) %>%
+  cowplot::plot_grid(plotlist = .,ncol = 1)
 
 ```
+As the frequentist curve gets more wiggly, the Bayesian curve stays reasonably stable. What about for higher $p$?
+```{r poly-6,cache = TRUE,fig.height=50}
+ptotry <- c(11:20)
+ptotry %>%
+  map(~list(
+            p = .x,
+            data = fit_both_models(p = .x))
+  ) %>%
+  map(plot_one_p) %>%
+  cowplot::plot_grid(plotlist = .,ncol = 1)
+```
+While it's probably not a good idea to fit models with such high degree polynomials, at least the Bayesian implementation guards somewhat against high variability in the fitted curves.
+
+Based on this, we can decide what degree of polynomial to use. Since the quadratic is shaped almost exactly like the curves of higher degrees (up to around 10), we can stick with the simplest reasonable model and choose that one; we also could be more formal about it and split the data into a training and a test set, fit the polynomials on each, and report the test set error.
