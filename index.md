@@ -10,13 +10,13 @@ Github repository: [https://github.com/awstringer1/leaf2018](https://github.com/
   - Worked example from Horton (2013): probability problem with empirical and analytical solution (mulit-part, see below)
   - Worked example from Horton (2013): [computing a CDF and sampling from a distribution](http://awstringer1.github.io/leaf2018/horton2013-sampling.html)
   
-** Student Tutorials**:
+**Student Tutorials**:
 
   - [Resampling Methods](http://awstringer1.github.io/leaf2018/resampling-methods.html)
   - [Predictive Modelling](http://awstringer1.github.io/leaf2018/prediction-rossman-store-sales.html)
   - [Introduction to Bayesian Statistics](http://awstringer1.github.io/leaf2018/intro-to-bayesian.html)
 
-** Lecture Supplements**:
+**Lecture Supplements**:
 
   - [Normal Approximation to Binomial](http://awstringer1.github.io/leaf2018/lecture-1-normal-approx-binomial.html)
   - [Central Limit Theorem: application in analyzing roundoff error](http://awstringer1.github.io/leaf2018/lecture-1-clt-roundoff-error.html)
