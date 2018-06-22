@@ -3,6 +3,41 @@ This site hosts materials created by Alex Stringer in support of the LEAF projec
 
 Github repository: [https://github.com/awstringer1/leaf2018](https://github.com/awstringer1/leaf2018)
 
+# Index
+
+**Instructor Tutorials**:
+
+  - Worked example from Horton (2013): probability problem with empirical and analytical solution (mulit-part, see below)
+  - Worked example from Horton (2013): [computing a CDF and sampling from a distribution](http://awstringer1.github.io/leaf2018/horton2013-sampling.html)
+  
+** Student Tutorials**:
+
+  - [Resampling Methods](http://awstringer1.github.io/leaf2018/resampling-methods.html)
+  - [Predictive Modelling](http://awstringer1.github.io/leaf2018/prediction-rossman-store-sales.html)
+  - [Introduction to Bayesian Statistics](http://awstringer1.github.io/leaf2018/intro-to-bayesian.html)
+
+** Lecture Supplements**:
+
+  - [Normal Approximation to Binomial](http://awstringer1.github.io/leaf2018/lecture-1-normal-approx-binomial.html)
+  - [Central Limit Theorem: application in analyzing roundoff error](http://awstringer1.github.io/leaf2018/lecture-1-clt-roundoff-error.html)
+  - [Fitting a Gamma distribution to rainfall data via Method of Moments](http://awstringer1.github.io/leaf2018/sta261-lecture2-method-of-moments-gamma.html)
+  - [Simulating Likelihood Functions](http://awstringer1.github.io/leaf2018/sta261-lecture4-simulating-likelihood.html)
+  - [Maximum Likelihood](http://awstringer1.github.io/leaf2018/sta261-lecture4-maximum-likelihood.html)
+  - [Sampling Distributions of Estimators](http://awstringer1.github.io/leaf2018/sta261-lecture5-sampling-distributions)
+  
+`learnr` **tutorials**:
+
+  - [Learnr tutorial on Law of Large Numbers and simulating random variables in R](http://underdog.utstat.toronto.edu:3838/stringer/law-of-large-numbers-simulation)
+  - [Learnr tutorial involving fairly complete analysis of a textbook dataset](http://underdog.utstat.toronto.edu:3838/stringer/intro-data-analysis-faraway)
+  
+**Shiny Apps**:
+
+  - [Bayesian Coin Flipping](http://underdog.utstat.toronto.edu:3838/stringer/bayesian-tutorial/)
+
+**Datasets**:
+
+Scroll to the bottom of the page for a table containing some useful datasets for use in class.
+
 # Materials
 
 ## Instructor Tutorials
@@ -18,7 +53,8 @@ Worked example from Horton (2013): probability problem with empirical and analyt
   - [Recommendations on implementing similar examples in statistics courses](http://awstringer1.github.io/leaf2018/horton2013-implementation.html)
   - [Example assessments](http://awstringer1.github.io/leaf2018/horton2013-.html)
 
-Worked example from Horton (2013): introduction to Bayesian statistics and sampling from a posterior distribution using MCMC
+Worked example from Horton (2013): [computing a CDF and sampling from a distribution](http://awstringer1.github.io/leaf2018/horton2013-sampling.html)
+
 
 ## Examples of Student-Facing Materials
 Examples of materials that can be worked on with students as part of a course. Each item has an example of a course in which it could be used, with **bold** indicating a course in which it *has* been used. Also included are example Intended Learning Outcomes that the material might relate to. These are aligned with the Statistics Undergraduate Program Learning Outcomes.
