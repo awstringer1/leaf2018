@@ -1,5 +1,5 @@
 #' ---
-#' title: "Introductory Predictive Modelling" 
+#' title: "Predictive Modelling - Data Processing" 
 #' subtitle: "Rossman Store Sales Kaggle Competition"
 #' author: "Alex Stringer"
 #' date: '`r Sys.Date()`'
@@ -1167,3 +1167,11 @@ readr::write_csv(test_predict,'/Users/alexstringer/phd/s18/leaf-ra/leaf2018/ross
 #' 
 #' Submitting this got me a score of 0.38970, which is not great. Next, we'll see about
 #' developing a better predicting model for these data.
+#' 
+#' As a final step, save the training, validation and test sets to disk as .RData files, so
+#' we can read them in directly in the subsequent tutorial where we fit more appropriate models:
+#' 
+save(training_set,file = '/Users/alexstringer/phd/s18/leaf-ra/leaf2018/rossman-training-set.RData')
+save(validation_set,file = '/Users/alexstringer/phd/s18/leaf-ra/leaf2018/rossman-validation-set.RData')
+save(test_discretized,file = '/Users/alexstringer/phd/s18/leaf-ra/leaf2018/rossman-test-set.RData')
+

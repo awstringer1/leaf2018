@@ -11,7 +11,7 @@
 
 <meta name="author" content="Alex Stringer" />
 
-<meta name="date" content="2018-05-18" />
+<meta name="date" content="2018-07-05" />
 
 <title>STA261 Summer 2018 Lecture 2:</title>
 
@@ -307,7 +307,7 @@ $(document).ready(function () {
 <h1 class="title toc-ignore">STA261 Summer 2018 Lecture 2:</h1>
 <h3 class="subtitle"><em>Method of Moments for Gamma-distributed data</em></h3>
 <h4 class="author"><em>Alex Stringer</em></h4>
-<h4 class="date"><em>2018-05-18</em></h4>
+<h4 class="date"><em>2018-07-05</em></h4>
 
 </div>
 
@@ -384,7 +384,7 @@ rainplot +
 <pre><code>## [1] 0.0503518</code></pre>
 <p>This is another way of showing that our chosen probability distribution is not flexible enough: we estimate the mean well, but we are off by almost <span class="math inline">\(3\times\)</span> in estimating the variance.</p>
 <p>We can try what was originally suggested by the textbook: a <span class="math inline">\(Gamma(\alpha,\lambda)\)</span> distribution with density <span class="math display">\[
-f(x;\lambda,\beta) = \frac{\lambda^{\alpha}}{\Gamma{\alpha}} x^{\alpha-1}\exp\left( -\lambda x\right)
+f(x;\lambda,\beta) = \frac{\lambda^{\alpha}}{\Gamma{(\alpha})} x^{\alpha-1}\exp\left( -\lambda x\right)
 \]</span> This has the property that <span class="math inline">\(Gamma(1,\lambda) \overset{d}{=} Exponential(\lambda)\)</span> (with the rate parametrization), so it can be viewed as a direct extension of our previous model. The first two moments are <span class="math display">\[
 \begin{aligned}
 E(X) &amp;= \frac{\alpha}{\lambda} \\
