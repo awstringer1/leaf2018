@@ -13,7 +13,7 @@ Github repository: [https://github.com/awstringer1/leaf2018](https://github.com/
 **Student Tutorials**:
 
   - [Resampling Methods](http://awstringer1.github.io/leaf2018/resampling-methods.html)
-  - [Predictive Modelling](http://awstringer1.github.io/leaf2018/prediction-rossman-store-sales.html)
+  - [Predictive Modelling - Data Processing](http://awstringer1.github.io/leaf2018/prediction-rossman-store-sales.html)
   - [Introduction to Bayesian Statistics](http://awstringer1.github.io/leaf2018/intro-to-bayesian.html)
 
 **Lecture Supplements**:
