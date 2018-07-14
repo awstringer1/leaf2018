@@ -64,6 +64,7 @@ beeswax_hist <- beeswax %>%
        x = "Melting Point (degrees celcius",
        y = "Density")
 
+beeswax_hist
 ```
 It is hard to tell visually if a Gaussian curve would be a good fit, since the histogram is not very smooth due to the low sample size.
 

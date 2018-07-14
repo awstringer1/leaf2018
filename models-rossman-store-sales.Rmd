@@ -8,5 +8,471 @@ output:
     toc: true
   editor_options: 
     chunk_output_type: console
- ---
+---
 
+```{r setup-1}
+suppressMessages({
+  suppressWarnings({
+    library(tidyverse) # Includes all the necessary stuff: dplyr, ggplot, tidyr, and so on
+    library(lubridate) # For dealing with dates
+    library(lme4) # Linear mixed effects models
+    library(rstanarm) # Bayesian Linear mixed effects models with STAN
+  })
+})
+```
+
+In the [previous tutorial](http://awstringer1.github.io/leaf2018/prediction-rossman-store-sales.html), we read in and prepared a kaggle dataset for model-building. In this tutorial, we will build a few predictive models for these data, evaluate them on our validation set, and submit them to kaggle to see how we fair on their test set.
+
+# The Data
+
+Recall the data: daily sales on each of $1,115$ Rossman drug stores in Europe. Our goal is to use the store-level and store/day-level data provided to predict daily sales for these same stores, in the future. See the previous tutorial for details of reading in the data, creating new features, and performing basic data analysis. We saved the model-ready data to disk, so we can load it as follows:
+
+```{r load-data-1,cache = TRUE}
+load("/Users/alexstringer/phd/s18/leaf-ra/leaf2018/datasets/rossman-training-set.RData")
+load("/Users/alexstringer/phd/s18/leaf-ra/leaf2018/datasets/rossman-validation-set.RData")
+load("/Users/alexstringer/phd/s18/leaf-ra/leaf2018/datasets/rossman-test-set.RData")
+```
+
+If you didn't run the previous tutorial locally, you can download the data from github:
+
+  - Training: https://github.com/awstringer1/leaf2018/raw/gh-pages/datasets/rossman-training-set.RData
+  - Validation: https://github.com/awstringer1/leaf2018/raw/gh-pages/datasets/rossman-validation-set.RData
+  - Test: https://github.com/awstringer1/leaf2018/raw/gh-pages/datasets/rossman-test-set.RData
+
+The `load()` function can take a URL as an argument, however it has trouble with `https`.
+
+The `R` function `load()` takes the given file and loads all the objects in this file into the global environment by default (if you're calling the function interactively like we are). We can see that this loaded our datasets:
+```{r load-data-2}
+ls()
+```
+If you're programming with `load()` rather than using it interactively, it's a good idea to load files into a new environment you create, and then check what you loaded. For example,
+```{r load-data-3}
+# Not run:
+# e <- new.env()
+# load("my/file.RData",envir = e)
+```
+
+We can take a look at the datasets we loaded:
+```{r load-data-4}
+glimpse(training_set)
+glimpse(validation_set)
+glimpse(test_discretized)
+```
+The training and validation sets were treated exactly the same in the preprocessing, since we applied the preprocessing to the original kaggle "training" set, and then held out the most recent 6 weeks of that data to form our validation set. The test set is kaggle's original "test set", and we made sure to add all the new variables we added to the training set, but didn't bother to delete the extra ones. All we use this one for is prediction, so this is okay.
+
+We notice that all of our features are categorical. This is because during the preprocessing, we made the decision to convert the remaining numeric variables (there were only 3 anyways) to categorical by binning/discretizing them, in order to remove the effect of long-tailed distributions and outliers. This is of course not the only way to do it, and this is one potential part of the preprocessing that you can go back and change if you are curious.
+
+We can now build our first model.
+
+# The Models
+
+## Simple Linear Regression (not good)
+
+Simple linear regression of the form
+$$
+y = X\beta + \epsilon
+$$
+is not going to work well here. Why? Well, nonlinearity isn't a problem anymore, since all of our features are categorical (that was another reason to discretize). What about the fact that observations are grouped? Sales from different days on the same store are likely to be more correlated than sales from different days and different stores. While this is a problem for *inference* (standard errors of the regression coefficients will be lower than they should be), it is not necessarily a problem for *prediction*. The reason we want to try to account for it is not because not doing so would be "wrong"; it is simply because doing so will probably improve our predictions. 
+
+First, let's ignore the grouping and fit a simple linear regression. This takes about 3 seconds on my 2015 MacBook Pro with 16 gigs of RAM:
+```{r simple-regression-1,cache = TRUE}
+simple_lr_1 <- lm(Sales ~ . -Store,data = training_set)
+summary(simple_lr_1)
+
+```
+Even though the fit is no good, we can do some basic sanity checks; for example, sales during the Christmas season (November and December, months 11 and 12) are higher than other months. The day of the week seems to matter, as does the competition distance. These aren't formal statistical inferences; we're just getting a feel for the variables in the model.
+
+To evaluate the predictions, let's first score the model on the validation set, and then we'll compute the target metric (root-mean-square-percentage-error), and plot the predicted vs actual Sales.
+
+```{r simple-regression-2}
+simple_lr_validation_preds <- data_frame(
+  observed = validation_set %>% pull(Sales),
+  predicted = predict(simple_lr_1,newdata = validation_set)
+)
+simple_lr_validation_preds
+
+# Score them; RMSPE
+get_rmspe <- function(preds) {
+  preds %>%
+    summarize(rmspe = sqrt( mean( ((observed - predicted)/observed)^2 ))) %>%
+    pull(rmspe)
+}
+get_rmspe(simple_lr_validation_preds) # Very bad!
+
+# Plot predicted vs actual
+simple_lr_validation_preds %>%
+  ggplot(aes(x = observed,y = predicted)) +
+  theme_classic() + 
+  geom_point(pch = 21,colour = "black",fill = "lightblue") +
+  geom_abline(slope = 1,intercept = 0,colour = "red",linetype = "dashed") +
+  labs(title = "Validation Predictions, Simple Linear Regression",
+       subtitle = "Rossman Store Sales Data",
+       x = "Observed",
+       y = "Predicted") +
+  scale_x_continuous(labels = scales::dollar_format()) +
+  scale_y_continuous(labels = scales::dollar_format())
+```
+We see that the predictions have high variance, and that we are underpredicting by a large amount (look at the axis labels).
+
+## Linear Mixed Effects Model (better)
+
+We could account for different stores' differing sales by including `Store` as a categorical variable, resulting in a different intercept for each store. This would mean estimating over a thousand regression coefficients; while not impossible using modern hardware, it's also not desirable. Such a model would be hard to interpret (it would be hard to even print it to the screen), and the estimation of so many distinct intercepts might be unstable.
+
+A more stable and computationally efficient approach is to utilize Linear Mixed Effects Models and their implementation in the `lme4` package. This implementation is highly user friendly and computationally efficient. We'll fit the model
+$$
+\begin{aligned}
+y_{ij} &= x_{ij}^{\prime}\beta + b_{i} + \epsilon_{ij} \\
+b_{i} &\overset{IID}{\sim} N(0,\sigma^{2}_{b}) \\
+\epsilon_{ij} &\overset{IID}{\sim} N(0,\sigma^{2})
+\end{aligned}
+$$
+The $x_{ij}$ is a vector containing the features corresponding to the $i^{th}$ store on the $j^{th}$ day. The $b_{i}$ is a random variable representing the $i^{th}$ store's "baseline" sales- the average daily sales of a randomly chosen store. The $\epsilon_{ij}$ is the familiar error term seen in simple linear regression models. This model still specifies a different intercept for every store, however the estimation will shrink these intercepts toward their mean, improving the stability of the estimation. We choose $0$ to be the mean of the random effects $b_{i}$ because the $x_{ij}$ still has a 1 in it, that is the model still has a fixed intercept $\beta_{0}$ which represents the global average daily sales of all the stores.
+
+We can fit this model using the `lme4::lmer()` function. This took about 30 seconds on my laptop.
+```{r lme-1,cache = TRUE}
+# Annoyingly, we have to type the formula out manually, as predict.merMod cannot handle
+# formulae with a dot
+lm1ff <- as.formula(str_c(
+  "Sales ~ ",
+  str_c(colnames(training_set)[-c(1,3)],collapse = " + "),
+  " + (1|Store)"
+))
+
+lme1 <- lmer(lm1ff,data = training_set)
+summary(lme1)
+```
+We see that before, when the `PromoIntervalMar,Jun,Sept,Dec` level resulted in a `NA` coefficient, `lmer` drops this level entirely. This is okay, but it's something to make note of.
+
+Comparing these coefficient estimates to the ones from the simple linear regression, we see that they are similar, but slightly smaller on average and sometimes in the opposite direction:
+```{r lme-2}
+data_frame(
+  coefficient = names(coef(simple_lr_1))[-23],
+  Simple = coef(simple_lr_1)[-23],
+  Mixed = coef(summary(lme1))[ ,1]
+) %>%
+  gather(type,value,Simple:Mixed) %>%
+  ggplot(aes(x = coefficient,y = value,group = type,fill = type)) +
+  theme_classic() +
+  geom_bar(stat = "identity",position = "dodge",colour = "black") +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title = "Comparison of Coefficients, Simple and Mixed Effects Linear Regression",
+       subtitle = "Rossman Store Sales Data",
+       x = "",
+       y = "Coefficient Estimate",
+       fill = "")
+```
+
+We can also take a look at the estimated intercepts. *Estimated* is not the correct term to use here anymore though, since these are no longer parameter estimates, but rather random variables. What we actually look at are the *predicted* random effects, which are given by the mean of the distribution of $b_{i} | y$, the random effects conditional on the observed data. These are precomputed by the `lmer` function:
+```{r lme-3}
+ranef(lme1)$Store %>%
+  as_data_frame() %>%
+  rename(intercept = `(Intercept)`) %>%
+  ggplot(aes(x = intercept)) +
+  theme_classic() +
+  geom_histogram(bins = 100,colour = "black",fill = "purple") +
+  labs(title = "Histogram of Predicted Random Intercepts, lme1 Model",
+       subtitle = "Rossman Store Sales Data",
+       x = "Predicted Intercept",
+       y = "Count") +
+  scale_x_continuous(labels = scales::comma_format())
+
+```
+
+This is nice; the distribution of predicted random effects has a long right tail. This is actually bad for inference, since it breaks a key model assumption, but it is potentially good for prediction, since those stores with high sales were likely predicted very poorly by our simple linear regression model, and hence inflated our prediction error.
+
+Let's take a look at the predictions from this model:
+```{r lme-4}
+lme1_validation_preds <- data_frame(
+  observed = validation_set %>% pull(Sales),
+  predicted = predict(lme1,newdata = validation_set)
+)
+lme1_validation_preds
+
+# Score them; RMSPE
+get_rmspe(lme1_validation_preds) # Better
+
+# Plot predicted vs actual
+lme1_validation_preds %>%
+  ggplot(aes(x = observed,y = predicted)) +
+  theme_classic() + 
+  geom_point(pch = 21,colour = "black",fill = "lightblue") +
+  geom_abline(slope = 1,intercept = 0,colour = "red",linetype = "dashed") +
+  labs(title = "Validation Predictions, Mixed Effects Model",
+       subtitle = "Rossman Store Sales Data",
+       x = "Observed",
+       y = "Predicted") +
+  scale_x_continuous(labels = scales::dollar_format()) +
+  scale_y_continuous(labels = scales::dollar_format())
+```
+
+Hey, those predictions look a lot better than before!
+
+How could we extend this model? We could try adding more random effects terms, or interactions between fixed effects. Let's take a look at some randomly selected stores' sales visually to try and see how they change over time. For good measure we'll also include the predictions from the most recent model.
+
+```{r store-sales-1,fig.height = 20,cache=TRUE}
+# Use the training predictions and include the Month and DayOfWeek
+# Since there will be roughly 4 observations per store / day of week / month, average them
+# for plotting purposes. Also add a combined indicator for month/day for the x-axis
+# Note we use the training predictions because the validation set only has 6 weeks of data
+lme1_trainpreds_withdate <- training_set %>%
+  select(Store,Sales,Month,DayOfWeek) %>%
+  bind_cols(data_frame(predicted = predict(lme1,newdata = training_set))) %>%
+  group_by(Store,Month,DayOfWeek) %>%
+  summarize(observed = mean(Sales),predicted = mean(predicted)) %>%
+  mutate(dateind = lubridate::ymd(str_c("2015",Month,DayOfWeek,sep="-")))
+
+
+# Randomly sample 20 stores and plot them
+set.seed(897623)
+randstore <- sample(unique(validation_set$Store),20)
+
+lme1_trainpreds_withdate %>%
+  gather(type,value,observed:predicted) %>%
+  filter(Store %in% randstore) %>%
+  ggplot(aes(x = dateind,group = Store,y = value,colour = type)) +
+  theme_classic() +
+  facet_wrap(~Store) +
+  geom_line() +
+  labs(title = "Predicted and Observed Sales by Date, Randomly Selected Stores",
+       subtitle = "Rossman Store Sales Data",
+       x = "Date",
+       y = "Sales") +
+  theme(axis.text.x = element_text(angle = 90)) +
+  scale_y_continuous(labels = scales::dollar_format())
+  
+  
+```
+You can re-run the above code using different random seeds to get a fuller idea of how stores' sales change with the day and month. It seems like introducing a random slope for day of the week might be a good idea; the same for month might also be helpful. Introducing further random effects can cause matrices in the underlying calculations to become very large, so it should be done carefully. 
+
+When I ran the below on my laptop, it hadn't finished after an hour, so I killed it. You may wish to try this on your own, perhaps letting it run overnight.
+```{r lme-5,cache = TRUE,eval = FALSE}
+lm2ff <- as.formula(str_c(
+  "Sales ~ ",
+  str_c(colnames(training_set)[-c(1,3)],collapse = " + "),
+  " + (DayOfWeek|Store)"
+))
+
+lme2 <- lmer(lm2ff,data = training_set)
+summary(lme2)
+```
+
+For now, we can score the test set and submit the results to kaggle:
+
+```{r lme-6}
+test_scored_lme1 <- test_discretized %>%
+  bind_cols(data_frame(Sales = predict(lme1,newdata = test_discretized))) %>%
+  mutate(Sales = if_else(Open == 0,0,Sales)) %>%
+  mutate(Sales = if_else(is.na(Sales),0,Sales)) %>% # There are 11 NA predictions remove them
+  dplyr::select(Id,Sales)
+
+test_scored_lme1
+readr::write_csv(test_scored_lme1,"/Users/alexstringer/phd/s18/leaf-ra/leaf2018/datasets/rossman-lme1-predictions.csv")
+```
+With the results written to disk, you can then go ahead and submit them through kaggle either through your web browser, or using their API as described in the previous tutorial:
+
+`kaggle competitions submit -c rossmann-store-sales -f rossman-lme1-predictions.csv -m "LME1"`
+
+This yielded me a public score fo 0.1924, a significant improvement over our linear regression from before, but still not world-class (the winning RMSPE was about 0.10).
+
+With this workflow in place, we are free to try other things, for example a transformation on the response:
+```{r lme-7,cache = TRUE}
+lm3ff <- as.formula(str_c(
+  "log(Sales+1) ~ ",
+  str_c(colnames(training_set)[-c(1,3)],collapse = " + "),
+  " + (1|Store)"
+))
+
+lme3 <- lmer(lm3ff,data = training_set)
+summary(lme3)
+
+# Don't forget to exponentiate the resulting predictions!
+lme3_validation_preds <- data_frame(
+  observed = validation_set %>% pull(Sales),
+  predicted = exp(predict(lme3,newdata = validation_set))
+)
+lme3_validation_preds
+
+# Score them; RMSPE
+get_rmspe(lme3_validation_preds) # Better
+
+# Plot predicted vs actual
+lme3_validation_preds %>%
+  ggplot(aes(x = observed,y = predicted)) +
+  theme_classic() + 
+  geom_point(pch = 21,colour = "black",fill = "lightblue") +
+  geom_abline(slope = 1,intercept = 0,colour = "red",linetype = "dashed") +
+  labs(title = "Validation Predictions, Mixed Effects Model, log-transformed Sales",
+       subtitle = "Rossman Store Sales Data",
+       x = "Observed",
+       y = "Predicted") +
+  scale_x_continuous(labels = scales::dollar_format()) +
+  scale_y_continuous(labels = scales::dollar_format())
+
+test_scored_lme3 <- test_discretized %>%
+  bind_cols(data_frame(Sales = exp(predict(lme3,newdata = test_discretized)))) %>%
+  mutate(Sales = if_else(Open == 0,0,Sales)) %>%
+  mutate(Sales = if_else(is.na(Sales),0,Sales)) %>% # There are 11 NA predictions remove them
+  dplyr::select(Id,Sales)
+
+test_scored_lme3
+readr::write_csv(test_scored_lme3,"/Users/alexstringer/phd/s18/leaf-ra/leaf2018/datasets/rossman-lme3-predictions.csv")
+```
+
+Submitting this got me a public score of 0.178, a slight-looking but actually not-that-insignificant improvement. And so on.
+
+Next we'll look at a Bayesian approach to predictive modelling.
+
+## Bayesian Linear Mixed Effects Modelling with Stan
+
+Here we'll investigate a Bayesian approach to fitting the above linear mixed effects model, where we put prior distributions on all unknown quantites, compute their posterior distribution given the data, and then make predictions by averaging over models defined by the posterior parameter configurations, weighted by their posterior probabilities. For an introduction to Bayesian inference in general, see [the Bayesian inference tutorial](http://awstringer1.github.io/leaf2018/intro-to-bayesian.html).
+
+Our statement of the linear mixed effects model was as follows:
+$$
+\begin{aligned}
+y_{ij} &= x_{ij}^{\prime}\beta + b_{i} + \epsilon_{ij} \\
+b_{i} &\overset{IID}{\sim} N(0,\sigma^{2}_{b}) \\
+\epsilon_{ij} &\overset{IID}{\sim} N(0,\sigma^{2})
+\end{aligned}
+$$
+This heirarchical specification is what we need to account for the fact that observations (daily sales) from the same store are likely to be related to each other; it is highly desirable to use a store's previous sales to predict its future sales. 
+
+For the Bayesian approach, the model is written out the same way, except now we have a further level of probability distributions to specify: the prior distributions on the remaining fixed, unknown quantites:
+$$
+\begin{aligned}
+y_{ij} &= x_{ij}^{\prime}\beta + b_{i} + \epsilon_{ij} \\
+b_{i} &\overset{IID}{\sim} N(0,\sigma^{2}_{b}) \\
+\epsilon_{ij} &\overset{IID}{\sim} N(0,\sigma^{2}) \\
+\beta &\sim F_{\beta} \\
+\sigma^{2}_{b} &\sim F_{\sigma^{2}_{b}} \\
+\sigma^{2} &\sim F_{\sigma^{2}} \\
+\end{aligned}
+$$
+Here, $F_{\beta}$, etc. are probability distributions that we get to choose, and represent the range of values for these parameters that we think are plausible, prior to seeing the data. We can choose these based on actual prior knowledge (e.g. maybe we think the variance is between 1 and 10, for some reason), or based on how the results affect the posterior distribution; see "Choosing a Prior" in the previously-linked Bayesian Inference tutorial for more information. When building a predictive model, in which we are more interested in how the model predicts the future as opposed to what parameters the model says are plausible, we are more interested in the latter aspect of choosing a prior, namely how the choice affects the resulting posterior, and predictions.
+
+To fit this Bayesian linear mixed effects model, we have a lot of steps:
+
+  - Choose prior distributions
+  - Compute an expression for the posterior distribution of the parameters given the data
+  - Compute an expression for the predictive distribution of a new datapoint, given the data
+  - Fit the model, either by 
+      - computing the posterior and predictive distributions analytically using math (usually not possible) or
+      - devising a sampling scheme based on Markov Chain Monte Carlo (MCMC) to draw exact samples from the posterior and predictive distributions or
+      - devising an approximation to the posterior and predictive distribution, using an available method such as Integrated Nested Laplace Approximation or Variational Inference
+  - Draw from the predictive distribution to predict new observations (sales from the observed stores on new days)
+  
+That's a lot of steps. In practical predictive modelling, it is often the case that the methods used will be extremely complicated, and require a lot of background to completely understand. While nothing can substitute your developing this background, it is usually not necessary to completely understand a method before you are able to apply it to some data and get a feel for how it works. In addition, even if you have extensive background in a topic (here: Bayesian inference), it is usually not the case that you will need to code it up from scratch. Before starting any modelling exercise, look at what software is available.
+
+In this case we will illustrate the use of the Bayesian computation/model fitting software suite `Stan`, and we will do so through the `rstamarm` `R` package. `Stan` is a general-purpose software for performing Bayesian computations, and the `rstanarm` package provides and `R` formula interface for fitting Bayesian regression models using `Stan`. Here we will illustrate the use of this package and discuss practical issues; to learn more about how `Stan` works, see the [documentation for Stan](http://mc-stan.org/users/).
+      
+The `stan_glmer` function implements the above model. Using a modern laptop and the full dataset, the computations performed by `Stan` are quite intensive. By default `Stan` implements an efficient MCMC sampling algorithm for sampling from the posterior and predictive distributions. For the Rossman data, this takes a very long time on my laptop. There are two approaches we can use here: reduce the dataset by subsampling, or change the method of computing the posterior. For starters, let's try the latter: rather than obtaining exact samples via MCMC (again, the default in `rstanarm`), we will set `algorithm = "meanfield"`, to implement *mean field Variational Inference*, an efficient (but potentially inaccurate) technique for approximating the posterior.
+
+In setting the arguments for the `stan_glmer` function below, I used information from the following vignettes. You can consult these for more information:
+
+  - [Prior distributions](https://cran.rstudio.com/web/packages/rstanarm/vignettes/priors.html)
+  - [Generalized Linear Models](https://cran.rstudio.com/web/packages/rstanarm/vignettes/continuous.html)
+  - [Generalized Linear Mixed Effects Models](https://cran.rstudio.com/web/packages/rstanarm/vignettes/glmer.html)
+
+Running this on the full dataset with the default prior distributions for all terms still took 2 - 3 hours. Let's see how this is done and how we can evaluate the results.
+
+```{r stan-1,cache = TRUE,eval=FALSE}
+
+## I ran the below outside of this notebook.
+## This took several hours
+stan1 <- stan_glmer(
+  formula = lm3ff,
+  data = training_set,
+  family = gaussian,
+  algorithm = "meanfield",
+  sparse = TRUE
+)
+
+# summary(stan1) # Prints output for each store, very long
+save(stan1,file = "/Users/alexstringer/phd/s18/leaf-ra/leaf2018/datasets/rossman-rstan1.RData")
+```
+
+```{r stan-2}
+# Load the object into its own environment, to reduce clutter in the global environment
+load_stan <- new.env()
+load("/Users/alexstringer/phd/s18/leaf-ra/leaf2018/datasets/rossman-rstan1.RData",envir = load_stan)
+ls(load_stan)
+pryr::object_size(load_stan$stan1)
+```
+
+We see that the fitted model object is quite large. We should compare the predicted values on the training set to the observed values as before, as well as comparing them on the validation set. Since the output of `stan_glmer` is not a static prediction equation but rather a predictive distribution, a further sensible comparison is to draw a new dataset from this predictive distribution, and check that it has similar statistical properties to the original training set. This can be accomplished using the `pp_check` function:
+```{r stan-3,cache=TRUE}
+# Draw 5 new datasets from the predictive distribution and compare them to the training set
+# Remember, the scale on the x-axis is log(sales + 1)
+pp_check(load_stan$stan1,plotfun = "hist",nreps = 5)
+```
+The datasets generated from the predictive distribution look similar to the training set, which is one indication that the model fits the training data well. You could also go more detailed and investigate summary statistics like predictive means and standard deviations.
+
+To obtain an actual set of validation predictions, we can draw from the predictive distribution values corresponding to the $X$ matrices for stores in the validation set using the `posterior_predict` function. This function's output is in a bit of a different form from that which works automatically with `tidyverse` functions, so needs to be manipulated. The output of `posterior_predict` is a matrix with columns corresponding to rows in the validation set, and rows corresponding to samples from the predictive distribution. The function doesn't output just a single prediction for each store and day- it outputs a sample from the predictive distribution for that store and day, which allows us to compute a point estimate (the actual prediction that we'll use) and a measure of uncertainty in the prediction itself. 
+
+We need to transpose the output matrix, match each row (formerly column) in this to the corresponding row in the validation set, compute a single prediction for each store, and output a dataframe containing the observed and predicted values like we had before:
+```{r stan-4,cache = TRUE}
+stan1_validpreds <- posterior_predict(load_stan$stan1,newdata = validation_set) %>%
+  t() %>% # Transpose; rows now correspond to rows in the validation set
+  apply(1,mean) %>% # Compute the mean of each row using R's built-in apply function
+  exp() %>% # Convert back to the scale of the original observations (remember we modelled log(sales))
+  data_frame(observed = validation_set$Sales,predicted = .)
+
+
+# Evaluate predictions  
+get_rmspe(stan1_validpreds)
+
+stan1_validpreds %>%
+  ggplot(aes(x = observed,y = predicted)) +
+  theme_classic() + 
+  geom_point(pch = 21,colour = "black",fill = "lightblue") +
+  geom_abline(slope = 1,intercept = 0,colour = "red",linetype = "dashed") +
+  labs(title = "Validation Predictions, Bayesian LME Model",
+       subtitle = "Rossman Store Sales Data",
+       x = "Observed",
+       y = "Predicted") +
+  scale_x_continuous(labels = scales::dollar_format()) +
+  scale_y_continuous(labels = scales::dollar_format())
+```
+
+Woah! That's not good. The predictions look good "on average", but many individual predictions are way off, with a chunk being drastically overestimated, and a chunk being somewhat underestimated. What is happening?
+
+Looking at the distribution of prediction errors, we see the bimodal distribution suggested by the above plot:
+```{r stan-5}
+stan1_validpreds %>%
+  mutate(error = predicted - observed) %>%
+  ggplot(aes(x = error)) +
+  theme_classic() +
+  geom_histogram(bins = 100,colour = "black",fill = "lightblue") +
+  labs(title = "Prediction Errors - Bayesian LME Model",
+       subtitle = "Validation Data",
+       x = "Predicted - Observed",
+       y = "Count") +
+  scale_x_continuous(labels = scales::dollar_format(),breaks = seq(-30000,30000,by=2000)) +
+  scale_y_continuous(labels = scales::comma_format()) +
+  theme(axis.text.x = element_text(angle = 90))
+```
+We could go into more detail, but frankly the predictions are so bad overall that it's probably better to try something else.
+
+The mean field variational approximation used in computing `stan1` is the simplest and most computationally speedy, but comes at a cost of predictive power. To be clear: we haven't done enough analysis of the predictions from `stan1` to conclude that they are bad *because* of the inference method used- we are zeroeing in on this as the first thing to try to change because it is easy to change, and because the fact that we picked the simplest/most restrictive possible option means that there is a possibility that changing it will improve predictions.
+
+The next speediest option available in `Stan` would be to still use variational inference, but use a more flexible family of approximations that, in particular, doesn't assume posterior independence between parameters like mean field does. Such "full-rank" variational inference is available in `stan_glmer` by specifying `method = "fullrank"`. We can fit this as follows:
+
+```{r stan-6,cache = TRUE,eval=FALSE}
+## I ran the below outside of this notebook.
+## This took several hours
+stan2 <- stan_glmer(
+  formula = lm3ff,
+  data = training_set,
+  family = gaussian,
+  algorithm = "sampling",
+  sparse = TRUE
+)
+
+# summary(stan1) # Prints output for each store, very long
+save(stan2,file = "/Users/alexstringer/phd/s18/leaf-ra/leaf2018/datasets/rossman-rstan2.RData")
+```
+
+```{r stan-7}
+load("/Users/alexstringer/phd/s18/leaf-ra/leaf2018/datasets/rossman-rstan2.RData",envir = load_stan)
+ls(load_stan)
+pryr::object_size(load_stan$stan2)
+```

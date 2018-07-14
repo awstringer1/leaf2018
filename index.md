@@ -73,7 +73,9 @@ Materials that are designed to walk students through a statistical concept and t
     - Simulate to verify theoretical calculations, and understand the concept of a sampling distribution/repeated sampling (**Computational Thinking**)
     - Source, read in, and analyze a real dataset from Open Data Toronto; ask appropriate questions, and think critically about how data is reported online and in the media (**Real-World Problems**)
 
-[Predictive Modelling](http://awstringer1.github.io/leaf2018/prediction-rossman-store-sales.html)
+[Predictive Modelling - Data Processing](http://awstringer1.github.io/leaf2018/prediction-rossman-store-sales.html)
+
+[Predictive Modelling - Model Fitting]()
 
   - `R` concepts covered: reading in data from delimited flat files; basic joins; feature engineering and preprocessing; basic prediction and evaluation
   - Statistical concepts covered: introduction to the mechanics of predictive modelling using real-world data, including reading and cleaning data, creating features, preprocessing and initial data analysis.

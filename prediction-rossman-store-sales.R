@@ -1171,7 +1171,7 @@ readr::write_csv(test_predict,'/Users/alexstringer/phd/s18/leaf-ra/leaf2018/ross
 #' As a final step, save the training, validation and test sets to disk as .RData files, so
 #' we can read them in directly in the subsequent tutorial where we fit more appropriate models:
 #' 
-save(training_set,file = '/Users/alexstringer/phd/s18/leaf-ra/leaf2018/rossman-training-set.RData')
-save(validation_set,file = '/Users/alexstringer/phd/s18/leaf-ra/leaf2018/rossman-validation-set.RData')
-save(test_discretized,file = '/Users/alexstringer/phd/s18/leaf-ra/leaf2018/rossman-test-set.RData')
+save(training_set,file = '/Users/alexstringer/phd/s18/leaf-ra/leaf2018/datasets/rossman-training-set.RData')
+save(validation_set,file = '/Users/alexstringer/phd/s18/leaf-ra/leaf2018/datasets/rossman-validation-set.RData')
+save(test_discretized,file = '/Users/alexstringer/phd/s18/leaf-ra/leaf2018/datasets/rossman-test-set.RData')
 
