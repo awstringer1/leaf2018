@@ -1,0 +1,176 @@
+---
+title: "STA261 Summer 2018 Lecture 7:" 
+subtitle: "Sampling Distributions of Likelihood Statistics (Score, MLE)"
+author: "Alex Stringer"
+date: '`r Sys.Date()`'
+output: 
+  html_document:
+    toc: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup-noshow, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r setup-show,include=TRUE}
+# Load the tidyverse packages
+suppressMessages({
+  suppressWarnings({
+    library(tidyverse)
+  })
+})
+```
+
+# Sampling Distribution of the Score Statistic
+
+In class, we defined the score statistic as the gradient of the log-likelihood:
+$$
+S(\theta) = \frac{\partial \ell(\theta)}{\partial \theta}
+$$
+where $\theta \in \mathbb{R}^{p}$$. This is a function of the fixed, unknown parameter $\theta$, for any fixed dataset $x \in \mathbb{R}^{n}$.
+
+The concept introduced in this lecture was: when viewed as being dependent not only on the fixed, unknown $\theta$, but also on the random $X$, the score statistic is itself a random variable. It's a random function of $\theta$: if we sample a different $X$, we get a different $S(\theta)$.
+
+
+## Normal Example 
+
+So how can we look at its sampling distribution? It's not a number, it's a function. Let's consider an example: if $X_{i} \overset{IID}{\sim} N(\mu,1)$ then we saw before the score statistic is
+$$
+S(\mu) = \sum_{i=1}\left( X_{i} - \mu\right) = \sum_{i=1}^{n}X_{i} - n\mu
+$$
+This is a linear function of $\mu$ with slope $-n$ and intercept $\sum_{i=1}X_{i}. So, drawing a new dataset from the distribution of the $X_{i}$ gives us a new line. And we can describe the properties of the lines we'd get if we sampled many such score statistics: they'd be parallel with slope $-n$, and intercepts equal to the values of $\sum_{i=1}^{n}X_{i}$ that we observe from our samples.
+
+Let's try it. We'll draw 5 values from the sampling distribution of the score statistic for this example, with mean $\mu = 0$ and sample size $n = 10$.
+
+```{r score-stat-1}
+mu0 <- 0 # True value of mu
+
+# Function to generate a random score statistic
+# This function takes in a sample size, draws a random sample from the normal distribution
+# with the above true mean, and then returns a function of mu
+gen_random_score <- function(n=10) {
+  x <- rnorm(n,mu0)
+  function(mu) sum(x - mu)
+}
+
+# Plot them
+# We'll generate 5 lines and plot them on the same graph
+# For plotting, though, we need to vectorize our score function.
+# So let's write a wrapper function that takes in a function of one variable,
+# and returns another function that vectorizes it- accepts a vector argument,
+# calls the function for each scalar element of this vector, then returns the vector
+# of function evaluations.
+# 
+vectorize <- function(f) {
+  # f is a function that accepts scalar arguments and returns scalar values
+  # vectorize(f) will return a function, which accepts vector arguments and returns vector values
+  function(x) {
+    out <- numeric(length(x))
+    for (i in 1:length(x)) {
+      out[i] <- f(x[i])
+    }
+    out
+  }
+}
+plt1 <- data_frame(x = c(-5,5)) %>%
+    ggplot(aes(x = x)) +
+    theme_classic() +
+    geom_hline(yintercept = 0,colour = "red") +
+    geom_vline(xintercept = mu0,colour = "purple") +
+    labs(title = "Random Score Function",
+         x = "mu",
+         y = "S(mu)")
+
+# Add the scores
+for (i in 1:5) {
+  plt1 <- plt1 + stat_function(fun = vectorize(gen_random_score())) 
+}
+
+plt1
+
+```
+
+Note that vectorizing functions is covered in slightly more detail in another tutorial, [here](http://awstringer1.github.io/leaf2018/horton2013-sampling.html).
+
+In class, we proved a theorem about how the expectation of the score evaluated at the true value of the parameter is zero. In this example, this corresponds to the observation that on average, the point at which the score hits zero (as a function of $\mu$, the red line on the plot) is the true value (0 in this example, as indicated by the vertical purple line).
+
+
+# Sampling Distribution of the MLE
+
+The sampling distribution of the score statistic is neat, but it is treated more as an intermediate result, on the way to proving the main result of this lecture: the central limit theorem for the maximum likelihood estimator. To this end, we showed that
+$$
+\frac{\hat{\theta} - \theta_{0}}{1/\sqrt{I(\theta_{0})}} \overset{d}{\rightarrow} N(0,1)
+$$
+That is, in finite samples, the distribution of the maximium likelihood estimator is well approximated by a normal distribution with mean equal to the true value $\theta_{0}$ and variance equal to the inverse of the Fisher Information.
+
+In previous lectures on sampling distributions, we already saw how to simulate many random samples, compute an estimator, and plot a histogram of its sampling distribution. We saw this almost always for examples in which we first worked out the sampling distribution analytically, by hand, and then used the simulations to verify and visualize our results. We could also have done this with the score statistic in the above Normal example- it's just equal to a sum of centred normals, and we know how to work out its distribution.
+
+The power of the CLT for the MLE comes from its generality: this holds for any "regular" (remember the regularity conditions) distribution. It saves the work of having to figure out a sampling distribution every time we have a new distribution. However, it also opens up the sampling distributions of MLEs for distributions where we *can't even write down a closed-form formula for the MLE*. If we can't write down a formula for the MLE, how else could we get its sampling distribution?
+
+## Gamma Example
+
+The simplest example of this is the Gamma$(\alpha,\beta)$ distribution. We saw we couldn't write down an answer for the MLE, because we couldn't solve the system of equations that resulted from setting the score equal to zero. We can, however obtain the MLE using numerical optimization- if we do this for many sampled datasets, we'll be able to observe the CLT for the MLE by making the same kind of histogram that we did before.
+
+```{r gamma-1}
+simulate_gamma_mle <- function(n) {
+  B <- 1000
+  alphatrue <- 2
+  betatrue <- 0.5
+  alphas <- numeric(B)
+  betas <- numeric(B)
+  
+  for (b in 1:B) {
+    
+    # Generate a (minus) log likelihood
+    x <- rgamma(n,alphatrue,betatrue)
+    ll <- function(p) -sum(dgamma(x,p[1],p[2],log=TRUE))
+    # Minimize minus ll ==> maximize ll
+    mle <- nlminb(c(1,1),ll,lower = c(0,0))
+    
+    alphas[b] <- mle$par[1]
+    betas[b] <- mle$par[2]
+  }
+  
+  plt1 <- data_frame(x = alphas) %>%
+    ggplot(aes(x = x)) +
+    theme_classic() + 
+    geom_histogram(bins = 50,colour = "black",fill = "firebrick1") +
+    labs(title = "MLE for Alpha",
+          subtitle = "Gamma Distribution",
+          x = "Alpha-hat",
+          y = "# Samples")
+  
+  plt2 <- data_frame(x = betas) %>%
+    ggplot(aes(x = x)) +
+    theme_classic() + 
+    geom_histogram(bins = 50,colour = "black",fill = "lightblue") +
+    labs(title = "MLE for Beta",
+          subtitle = "Gamma Distribution",
+          x = "Beta-hat",
+          y = "# Samples")
+  
+  print(cowplot::plot_grid(plt1,plt2))
+}
+```
+
+The above code will, for given sample size $n$:
+
+  - Simulate 1000 datasets from a Gamma$(2,.5)$ distribution
+  - For each, numerically maximize the log-likelihood (actually, minimize minus the log-likelihood, since the built in optimization routines in `R` only do minimization)
+  - Save the MLEs obtained in this way, and plot histograms
+  
+We can try this for large values of $n$ to watch the theorem work:
+
+```{r gamma-2}
+simulate_gamma_mle(1000)
+```
+
+And, we can run the function for different values of $n$, to get an idea of when the approximation maybe isn't so good:
+
+```{r gamma-3}
+simulate_gamma_mle(5)
+simulate_gamma_mle(10)
+simulate_gamma_mle(50)
+
+```
