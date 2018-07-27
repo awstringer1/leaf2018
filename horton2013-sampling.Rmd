@@ -371,6 +371,7 @@ thinning <- 9
 xstart <- 0
 
 iterations <- numeric(niter)
+accepted <- numeric(niter)
 curpoint <- xstart
 for (i in 1:niter) {
   # Propose a new point
@@ -378,10 +379,16 @@ for (i in 1:niter) {
   # Decide whether to accept
   if (runif(1) < (fx(newpoint) * dnorm(curpoint,newpoint,.25)) / (fx(curpoint) * dnorm(newpoint,curpoint,.25))) {
     iterations[i] <- newpoint
+    accepted[i] <- 1
   } else {
     iterations[i] <- curpoint
+    accepted[i] <- 0
   }
   curpoint <- iterations[i]
+  
+  if (i %% 100 == 0) {
+    cat("Iteration: ",i,", Acceptance Rate: ",mean(accepted[1:i]),"\n")
+  }
 }
 
 # Burn in and thin

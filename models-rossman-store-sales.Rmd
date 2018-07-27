@@ -446,33 +446,16 @@ stan1_validpreds %>%
        subtitle = "Validation Data",
        x = "Predicted - Observed",
        y = "Count") +
-  scale_x_continuous(labels = scales::dollar_format(),breaks = seq(-30000,30000,by=2000)) +
+  scale_x_continuous(labels = scales::dollar_format(),breaks = seq(-30000,1500000,by=10000)) +
   scale_y_continuous(labels = scales::comma_format()) +
   theme(axis.text.x = element_text(angle = 90))
 ```
-We could go into more detail, but frankly the predictions are so bad overall that it's probably better to try something else.
+We could go into more detail, but frankly the predictions are so bad overall that it's probably better to try something else. One very compellinng reason to take a Bayesian approach to predictive modelling is the degree of flexibility this allows the modeller (you!). There are many things we could try here, for example:
 
-The mean field variational approximation used in computing `stan1` is the simplest and most computationally speedy, but comes at a cost of predictive power. To be clear: we haven't done enough analysis of the predictions from `stan1` to conclude that they are bad *because* of the inference method used- we are zeroeing in on this as the first thing to try to change because it is easy to change, and because the fact that we picked the simplest/most restrictive possible option means that there is a possibility that changing it will improve predictions.
+  - Change the default prior distributions; we could be lazy and guess/use trial and error, or we could put more thought into what types of prior distributions will penalize results like the ones we got above
+  - Change the inference methodology. In Stan we specified `algorithm = "meanfield"` because this is the fastest option available and our dataset is large. However, the meanfield variational approximation is also potentially the least accurate; in particular, it assumes independence between posterior parameters, which is extremely restrictive. Changing this to a "full rank" variational approximation, or even better "sampling", which implements MCMC sampling from the posterior, would most likely result in better predictive performance of the model, but would come at a much greater computational cost.
 
-The next speediest option available in `Stan` would be to still use variational inference, but use a more flexible family of approximations that, in particular, doesn't assume posterior independence between parameters like mean field does. Such "full-rank" variational inference is available in `stan_glmer` by specifying `method = "fullrank"`. We can fit this as follows:
+We won't go further here, but you now have the tools you need to fit and evaluate predictive models on a somewhat complicated dataset, with grouped observations exhibiting temporal correlation. Happy modelling!
 
-```{r stan-6,cache = TRUE,eval=FALSE}
-## I ran the below outside of this notebook.
-## This took several hours
-stan2 <- stan_glmer(
-  formula = lm3ff,
-  data = training_set,
-  family = gaussian,
-  algorithm = "sampling",
-  sparse = TRUE
-)
 
-# summary(stan1) # Prints output for each store, very long
-save(stan2,file = "/Users/alexstringer/phd/s18/leaf-ra/leaf2018/datasets/rossman-rstan2.RData")
-```
 
-```{r stan-7}
-load("/Users/alexstringer/phd/s18/leaf-ra/leaf2018/datasets/rossman-rstan2.RData",envir = load_stan)
-ls(load_stan)
-pryr::object_size(load_stan$stan2)
-```

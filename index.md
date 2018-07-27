@@ -14,6 +14,7 @@ Github repository: [https://github.com/awstringer1/leaf2018](https://github.com/
 
   - [Resampling Methods](http://awstringer1.github.io/leaf2018/resampling-methods.html)
   - [Predictive Modelling - Data Processing](http://awstringer1.github.io/leaf2018/prediction-rossman-store-sales.html)
+  - [Predictive Modelling - Building and Evaluating Models](http://awstringer1.github.io/leaf2018/models-rossman-store-sales.html)
   - [Introduction to Bayesian Statistics](http://awstringer1.github.io/leaf2018/intro-to-bayesian.html)
 
 **Lecture Supplements**:
@@ -75,7 +76,7 @@ Materials that are designed to walk students through a statistical concept and t
 
 [Predictive Modelling - Data Processing](http://awstringer1.github.io/leaf2018/prediction-rossman-store-sales.html)
 
-[Predictive Modelling - Model Fitting]()
+[Predictive Modelling - Building and Evaluating Models](http://awstringer1.github.io/leaf2018/models-rossman-store-sales.html)
 
   - `R` concepts covered: reading in data from delimited flat files; basic joins; feature engineering and preprocessing; basic prediction and evaluation
   - Statistical concepts covered: introduction to the mechanics of predictive modelling using real-world data, including reading and cleaning data, creating features, preprocessing and initial data analysis.
