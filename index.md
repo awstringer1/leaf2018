@@ -25,7 +25,7 @@ Github repository: [https://github.com/awstringer1/leaf2018](https://github.com/
   - [Simulating Likelihood Functions](http://awstringer1.github.io/leaf2018/sta261-lecture4-simulating-likelihood.html)
   - [Maximum Likelihood](http://awstringer1.github.io/leaf2018/sta261-lecture4-maximum-likelihood.html)
   - [Sampling Distributions of Estimators](http://awstringer1.github.io/leaf2018/sta261-lecture5-sampling-distributions.html)
-  - [Sampling Distributions of Likelihood-derived Quantites](http://awstringer1.github.io/leaf2018/sta261-lecture7-sampling-distribution-likelihood.html)
+  - [Sampling Distributions of Likelihood-derived Quantities](http://awstringer1.github.io/leaf2018/sta261-lecture7-sampling-distribution-likelihood.html)
   - [One- and Two-way ANOVA](http://awstringer1.github.io/leaf2018/sta303-lecture2-3-code.html)
   - [Binomial and Logistic Regression](http://awstringer1.github.io/leaf2018/sta303-lecture4-code.html)
   - [Count Regression](http://awstringer1.github.io/leaf2018/sta303-lecture5-code.html)
