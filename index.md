@@ -25,7 +25,10 @@ Github repository: [https://github.com/awstringer1/leaf2018](https://github.com/
   - [Simulating Likelihood Functions](http://awstringer1.github.io/leaf2018/sta261-lecture4-simulating-likelihood.html)
   - [Maximum Likelihood](http://awstringer1.github.io/leaf2018/sta261-lecture4-maximum-likelihood.html)
   - [Sampling Distributions of Estimators](http://awstringer1.github.io/leaf2018/sta261-lecture5-sampling-distributions.html)
-  - [Sampling Distributions of Likelihood-derived Quantites](sta261-lecture7-sampling-distribution-likelihood.html)
+  - [Sampling Distributions of Likelihood-derived Quantites](http://awstringer1.github.io/leaf2018/sta261-lecture7-sampling-distribution-likelihood.html)
+  - [One- and Two-way ANOVA](http://awstringer1.github.io/leaf2018/sta303-lecture-2-3-code.html)
+  - [Binomial and Logistic Regression](http://awstringer1.github.io/leaf2018/sta303-lecture-4-code.html)
+  - [Count Regression](http://awstringer1.github.io/leaf2018/sta303-lecture-5-code.html)
   
   
 `learnr` **tutorials**:
@@ -166,6 +169,35 @@ Materials that can be used during lecture as a supplement to traditional slides 
     - Learn more complicating functional programming, including higher-order functions (functions that take in and/or return other functions), which allow us to simulate random functions, and automatically vectorize functions (**Computational Thinking**)
     - Use basic numerical optimization to solve small problems (**Computational Thinking**)
     
+    
+[One- and Two-way ANOVA](http://awstringer1.github.io/leaf2018/sta303-lecture-2-3-code.html)
+
+  - Example courses: STA302, **STA303**, STA305, STA442
+  - Description: example of one- and two-way ANOVA on two datasets from Faraway: Linear Models with R. Goes over initial data analysis, computing ANOVA tables from scratch and using R's built in functions, equivalent linear models, inference, and checking model assumptions. All plots are done "from scratch" in ggplot, as the use of ggplot itself was a learning objective in this course.
+  - Intended Learning Outcomes:
+    - Fit simple models to simple datasets, and be able to recreate most of the output of R's built-in functions (**Methods**, **Computational Thinking**)
+    - Create high-quality graphs with `ggplot()` (**Methods**)
+
+[Binomial and Logistic Regression](http://awstringer1.github.io/leaf2018/sta303-lecture-4-code.html)
+
+  - Example courses: **STA303**, STA442
+  - Description: example of binomial regression (challenger/orings data), and logistic regression (Wisconsin Breast Cancer data). Goes through inference for the former (with warnings) and prediction for the latter, including selecting a cutoff and ROC curves and TPR/FPR
+  - Intended Learning Outcomes:
+    - Recognize the failure of ordinary linear regression for analyzing proportions/bounded counts, and apply a new methodology accordingly (**Methods**)
+    - Understand that even though `R` outputs certain summary statistics, it is the responsibility of the Statistician to know when they should and should not be used/reported, based on the theory behind their calculation (**Theory**)
+    - Plot diagnostics from scratch using `ggplot()` (**Methods**)
+
+[Count Regression](http://awstringer1.github.io/leaf2018/sta303-lecture-5-code.html)
+
+  - Example courses: **STA303**, STA442
+  - Description: examples of count regression, using the Galapagos Islands Species data and a dataset on doses of quionine vs salmonella counts. Discussions of model assumptions, overdispersion and offsets, and inference.
+  - Intended Learning Outcomes:
+    - Recognize the failure of ordinary linear regression for analyzing counts, and *when* this happens (e.g. low counts), and apply a new methodology accordingly (**Methods**)
+    - Check model assumptions and implement changes (overdispersion/offsets); understand what model assumptions affect what inferential procedures (**Theory**)
+    - Plot diagnostics from scratch using `ggplot()` (**Methods**)
+  
+  
+  
 ### Learnr Tutorials
 Hosted tutorials on course concepts writtedn using the **learnr** package in R.
 
