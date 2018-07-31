@@ -63,7 +63,7 @@ Worked example from Horton (2013): [computing a CDF and sampling from a distribu
 
 
 ## Examples of Student-Facing Materials
-Examples of materials that can be worked on with students as part of a course. Each item has an example of a course in which it could be used, with **bold** indicating a course in which it *has* been used. Also included are example Intended Learning Outcomes that the material might relate to. These are aligned with the Statistics Undergraduate Program Learning Outcomes.
+Examples of materials that can be worked on with students as part of a course.
 
 ### Student Tutorials
 Materials that are designed to walk students through a statistical concept and the associated `R` skills for implementing it. This is distriguished from **Lecture Supplements** below by the detail in which the `R` code is covered; the **Student Tutorials** are designed to teach `R`, while the **Lecture Supplements** are mostly examples of using `R`.
@@ -106,7 +106,7 @@ Materials that are designed to walk students through a statistical concept and t
       - Source a real dataset from Open Data Toronto, pose a basic question, and apply statistical methodology to the available data to attempt to address that question (**Real-World Problems**)
 
 ### Lecture Supplements
-Materials that can be used during lecture as a supplement to traditional slides and blackboard writing.
+Materials that can be used during lecture as a supplement to traditional slides and blackboard writing. Each item has an example of a course in which it could be used, with **bold** indicating a course in which it *has* been used. Also included are example Intended Learning Outcomes that the material might relate to. These are aligned with the Statistics Undergraduate Program Learning Outcomes.
 
 [Normal Approximation to Binomial](http://awstringer1.github.io/leaf2018/lecture-1-normal-approx-binomial.html)
     
