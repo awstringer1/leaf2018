@@ -117,6 +117,58 @@ data_frame(theta = seq(.01,.99,by=.01),
        y = "Empirical Log Likelihood")
 ```
 
+We can do even better than this by realizing that we don't need to estimate each individual likelihood function using independent samples at various values of the parameters; we can sample one dataset from *all* the values of the parameters simultaneously! How? Recall the *inverse CDF transform*: if $U\sim\Unif(0,1)$, then $F^{-1}(U)\sim F$. We can sample a single dataset of size $n$ from a $Unif(0,1)$ distribution, and transforom it multiple times, once for each parameter value we want to plot.
+
+For the $Binom(n,\theta)$ distribution, the inverse CDF transformation is achieved by *thresholding*, as follows:
+
+1. Generate $U_{1},\ldots,U_{n}\overset{IID}{\sim}Unif(0,1)$
+1. Let $Y = X_{1} + \cdots + X_{n}$ where $X_{i} = 1(U_{i} \leq \theta)$
+
+We can sample a single uniform random sample, then apply the above transformation for multiple values of $\theta$.
+```{r bern-4,cache=TRUE}
+set.seed(878976)
+# Function to transform U into Y
+transform_u_to_y <- function(u,theta) {
+  sum(u <= theta)
+}
+# Simulate the likelihood function
+simulate_binomial_likelihood <- function(B,n,sumx) {
+  # B: how many simulations to do
+  # n: parameter of binomial
+  # sumx: observed suff. stat.
+  
+  thetagrid <- seq(0.01,0.99,by=0.01)
+  loglikvec <- numeric(length(thetagrid))
+  names(loglikvec) <- thetagrid
+  # Repeatedly sample uniforms and add up the results
+  for (b in 1:B) {
+    # Sample a uniform
+    u <- runif(n)
+    # Transform for each theta
+    for (theta in thetagrid) {
+      #cat(transform_u_to_y(u,theta),"\n")
+      #cat(loglikvec[str_c(theta)],"\n")
+      loglikvec[str_c(theta)] <- loglikvec[str_c(theta)] + (transform_u_to_y(u,theta) == sumx)
+    }
+  }
+  
+  # Return the loglikvec, divided by B, logged
+  log(loglikvec / B)
+}
+
+data_frame(theta = seq(.01,.99,by=.01),
+           ll = simulate_binomial_likelihood(10000,5,2)) %>%
+  ggplot(aes(x = theta,y = ll,group = 1)) +
+  theme_classic() +
+  geom_line() +
+  scale_x_continuous(breaks = seq(0,1,by=.1)) +
+  scale_y_continuous(breaks = seq(0,-15,by=-1)) +
+  labs(title = "Bernoulli Empirical Log-Likelihood for 5 Simulated Coin Flips",
+       subtitle = "Relative frequency with which each value of theta generated a sample of 2 heads in 5 flips",
+       x = "Theta (prob. of heads)",
+       y = "Empirical Log Likelihood")
+```
+
 
 ## Normal($\mu,1$)
 
